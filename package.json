@@ -6,14 +6,15 @@
     "packages/shared"
   ],
   "scripts": {
+    "start": "npm run dev",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm --workspace @zoho/web run dev",
-    "dev:api": "cd apps/api && python -m uvicorn app.main:app --reload --port 8000",
+    "dev:api": "./scripts/dev-api.sh",
     "build": "npm --workspace @zoho/web run build",
     "test": "npm run test:web && npm run test:api",
     "test:web": "npm --workspace @zoho/web run test",
     "test:api": "./scripts/run-api-tests.sh",
-    "setup:api": "cd apps/api && python -m venv .venv && . .venv/bin/activate && python -m pip install -r requirements.txt"
+    "setup:api": "./scripts/setup-api.sh"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -8,7 +8,5 @@ source "${SCRIPT_DIR}/api-common.sh"
 
 ensure_api_venv
 activate_api_venv
-install_api_requirements_if_needed
 
-cd "$(api_dir)"
-python -m pytest
+python -m pip install -r "$(api_dir)/requirements.txt"
