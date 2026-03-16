@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import HomePage from "../app/page";
 import * as api from "../lib/api";
 
@@ -25,13 +25,12 @@ describe("Home page", () => {
       ],
     });
 
-    const user = userEvent.setup();
     render(<HomePage />);
 
-    await user.click(screen.getByRole("button", { name: "Similar Tickets" }));
+    fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
     expect(screen.getByLabelText("Search issue or error text")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Find tickets" }));
+    fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
 
     expect(await screen.findByText("OTP expired for user")).toBeInTheDocument();
     expect(screen.getByText("Similarity score: 92%")).toBeInTheDocument();

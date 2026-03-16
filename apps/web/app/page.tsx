@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { fetchAnswer, fetchSimilarTickets } from "@/lib/api";
 import { Tabs, TabKey } from "@/components/Tabs";
 import { AnswerResponse, SimilarTicketsResponse } from "@zoho/shared/src";

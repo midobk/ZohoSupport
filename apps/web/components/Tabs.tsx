@@ -1,3 +1,5 @@
+import React from "react";
+
 export type TabKey = "ask" | "similar" | "live";
 
 const tabs: { key: TabKey; label: string }[] = [
