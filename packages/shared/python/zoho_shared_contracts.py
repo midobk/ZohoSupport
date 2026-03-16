@@ -15,11 +15,23 @@ class AnswerRequestContract(BaseModel):
     question: str = Field(..., min_length=3)
 
 
+class SourceType(str, Enum):
+    OFFICIAL_KB = "OfficialKB"
+    HISTORICAL_TICKET = "HistoricalTicket"
+
+
+class TrustLabel(str, Enum):
+    VERIFIED = "Verified"
+    UNVERIFIED = "Unverified"
+
+
 class SourceResultContract(BaseModel):
     id: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1)
     snippet: str = Field(..., min_length=1)
     url: HttpUrl
+    sourceType: SourceType
+    trustLabel: TrustLabel
 
 
 class AnswerResponseContract(BaseModel):

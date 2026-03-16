@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { fetchAnswer, fetchSimilarTickets } from "@/lib/api";
 import { Tabs, TabKey } from "@/components/Tabs";
 import { Badge } from "@/components/ui/Badge";
@@ -22,6 +22,25 @@ export default function HomePage() {
   const [ticketData, setTicketData] = useState<SimilarTicketsResponse | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
+
+  const sourceRailContent = useMemo(() => {
+    if (activeTab === "ask") {
+      return askData?.sources ?? [];
+    }
+
+    if (activeTab === "similar") {
+      return (ticketData?.tickets ?? []).map((ticket) => ({
+        id: ticket.ticketId,
+        title: ticket.subject,
+        snippet: ticket.snippet,
+        url: `internal://ticket/${ticket.ticketId}`,
+        sourceType: "HistoricalTicket" as const,
+        trustLabel: "Unverified" as const,
+      }));
+    }
+
+    return [];
+  }, [activeTab, askData?.sources, ticketData?.tickets]);
 
   const handleAsk = async () => {
     const normalizedQuestion = askQuery.trim();
@@ -185,7 +204,16 @@ export default function HomePage() {
                 </div>
               )}
 
-              {ticketData && (
+              {ticketData && ticketData.tickets.length === 0 && (
+                <div className="mt-4">
+                  <EmptyState
+                    title="No similar tickets found"
+                    description="Try broader keywords like MFA, OTP, login, or lockout to find relevant history."
+                  />
+                </div>
+              )}
+
+              {ticketData && ticketData.tickets.length > 0 && (
                 <ul className="mt-4 space-y-3">
                   {ticketData.tickets.map((ticket) => (
                     <li key={ticket.ticketId} className="rounded-md border border-slate-200 p-3">
@@ -205,14 +233,20 @@ export default function HomePage() {
 
           {activeTab === "live" && (
             <Card>
-              <CardTitle>Live Assist</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Live Assist</CardTitle>
+                <Badge variant="neutral">Safe Placeholder</Badge>
+              </div>
               <p className="mt-3 text-sm text-slate-600">
-                This panel will host real-time guided responses, follow-up prompts, and handoff suggestions.
+                Live Assist is intentionally disabled in this MVP to avoid unreliable real-time guidance.
               </p>
+              <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Agents should rely on Ask and Similar Tickets workflows for customer-facing responses during this demo.
+              </div>
               <div className="mt-4">
                 <EmptyState
                   title="Live Assist is coming soon"
-                  description="Upcoming: live context panel, sentiment cues, and next best actions."
+                  description="Upcoming: real-time context panel, sentiment cues, and next best actions after reliability hardening."
                 />
               </div>
             </Card>
@@ -228,21 +262,26 @@ export default function HomePage() {
           </div>
 
           <div className="mt-3 space-y-3">
-            {activeTab === "ask" && askData?.sources.length ? (
-              askData.sources.map((source) => (
-                <article key={source.id} className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3">
-                  <p className="text-sm font-medium text-slate-900">{source.title}</p>
+            {sourceRailContent.length > 0 ? (
+              sourceRailContent.map((source) => (
+                <article
+                  key={source.id}
+                  className={`rounded-md p-3 ${
+                    source.sourceType === "OfficialKB" ? "border border-emerald-200 bg-emerald-50/40" : "border border-indigo-200 bg-indigo-50/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-slate-900">{source.title}</p>
+                    <Badge variant={source.sourceType === "OfficialKB" ? "official" : "historical"}>{source.trustLabel}</Badge>
+                  </div>
                   <p className="mt-1 text-xs text-slate-600">{source.snippet}</p>
-                  <a className="mt-2 inline-block text-xs text-emerald-700 underline" href={source.url} target="_blank" rel="noreferrer noopener">
-                    {source.url}
-                  </a>
-                </article>
-              ))
-            ) : activeTab === "similar" && ticketData?.tickets.length ? (
-              ticketData.tickets.map((ticket) => (
-                <article key={ticket.ticketId} className="rounded-md border border-indigo-200 bg-indigo-50/40 p-3">
-                  <p className="text-sm font-medium text-slate-900">{ticket.ticketId}</p>
-                  <p className="mt-1 text-xs text-slate-600">{ticket.subject}</p>
+                  {source.sourceType === "OfficialKB" ? (
+                    <a className="mt-2 inline-block text-xs text-emerald-700 underline" href={source.url} target="_blank" rel="noreferrer noopener">
+                      {source.url}
+                    </a>
+                  ) : (
+                    <p className="mt-2 text-xs text-indigo-700">Historical ticket source: {source.id}</p>
+                  )}
                 </article>
               ))
             ) : (

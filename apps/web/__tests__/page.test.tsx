@@ -40,6 +40,8 @@ describe("Home page", () => {
           title: "Reset Multi-Factor Authentication for Locked Users",
           snippet: "Identity verification and MFA re-enrollment process.",
           url: "https://help.zoho.com/portal/en/kb/accounts/security/mfa-reset",
+          sourceType: "OfficialKB",
+          trustLabel: "Verified",
         },
       ],
     });
@@ -51,6 +53,7 @@ describe("Home page", () => {
     expect(await screen.findByText("Concise answer")).toBeInTheDocument();
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Source Rail")).toBeInTheDocument();
+    expect(screen.getByText("Verified")).toBeInTheDocument();
     expect(screen.getByText("Suggested customer reply")).toBeInTheDocument();
   });
 

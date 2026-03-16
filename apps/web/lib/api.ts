@@ -9,6 +9,28 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+type ApiErrorPayload = {
+  detail?: string | { message?: string };
+};
+
+async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await res.json()) as ApiErrorPayload;
+
+    if (typeof payload.detail === "string") {
+      return payload.detail;
+    }
+
+    if (payload.detail && typeof payload.detail === "object" && payload.detail.message) {
+      return payload.detail.message;
+    }
+  } catch {
+    // Ignore parse errors and use fallback message.
+  }
+
+  return fallback;
+}
+
 export async function fetchAnswer(question: string): Promise<AnswerResponse> {
   const payload = answerRequestSchema.parse({ question });
 
@@ -19,7 +41,7 @@ export async function fetchAnswer(question: string): Promise<AnswerResponse> {
   });
 
   if (!res.ok) {
-    throw new Error("Unable to fetch answer.");
+    throw new Error(await readErrorMessage(res, "Unable to fetch answer."));
   }
 
   return answerResponseSchema.parse(await res.json());
@@ -35,7 +57,7 @@ export async function fetchSimilarTickets(query: string): Promise<SimilarTickets
   });
 
   if (!res.ok) {
-    throw new Error("Unable to fetch similar tickets.");
+    throw new Error(await readErrorMessage(res, "Unable to fetch similar tickets."));
   }
 
   return similarTicketsResponseSchema.parse(await res.json());

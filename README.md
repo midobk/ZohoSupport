@@ -1,26 +1,28 @@
 # Zoho Support Copilot (Bootstrap)
 
-Initial runnable monorepo for a mocked Zoho Support Copilot.
+Runnable monorepo for a demo-ready, mocked Zoho Support Copilot MVP.
 
 ## Stack
 
 - `apps/web`: Next.js 14 + TypeScript + Tailwind
 - `apps/api`: FastAPI + Python
-- `packages/shared`: shared TypeScript types/schemas
+- `packages/shared`: shared TypeScript and Python API contracts
 
 ## Prerequisites
 
 - Node.js 20+
-- Python 3.11+
+- Python 3.10+
 
 ## Setup
 
-1. Install JavaScript dependencies:
+1. Install JavaScript dependencies from the repo root:
+
    ```bash
    npm install
    ```
 
-2. Install backend dependencies:
+2. Create and activate a backend virtual environment, then install backend dependencies:
+
    ```bash
    cd apps/api
    python -m venv .venv
@@ -31,39 +33,42 @@ Initial runnable monorepo for a mocked Zoho Support Copilot.
 
 ## Run locally
 
-From repo root:
+From the repo root:
 
 ```bash
 npm run dev
 ```
 
 This starts:
+
 - Web app: `http://localhost:3000`
 - API: `http://localhost:8000`
 
 Set `NEXT_PUBLIC_API_BASE_URL` if the API is not on `http://localhost:8000`.
 
-## Available views
+## MVP workflows
 
-- Ask
-- Similar Tickets
-- Live Assist (placeholder UI)
+- **Ask**: returns grounded answers with official Zoho sources and trust labels.
+- **Similar Tickets**: returns historical ticket matches with similarity scores and draft replies.
+- **Live Assist**: safe placeholder UI (intentionally non-functional in MVP).
 
 ## API endpoints
 
 - `GET /health`
 - `POST /api/answer`
 - `POST /api/similar-tickets`
+- `POST /api/tickets/search`
+- `GET /api/tickets/{ticket_id}`
 
 ## Testing
 
-Run all tests:
+Run everything from the repo root:
 
 ```bash
 npm test
 ```
 
-Or separately:
+Or run each suite independently:
 
 ```bash
 npm run test:web

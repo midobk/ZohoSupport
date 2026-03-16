@@ -21,7 +21,7 @@ def test_answer_endpoint_returns_ask_flow_payload() -> None:
     assert body["confidenceLabel"] in {"High", "Medium", "Low"}
     assert isinstance(body["suggestedReply"], str)
     assert len(body["sources"]) >= 1
-    assert {"title", "snippet", "url"}.issubset(body["sources"][0])
+    assert {"title", "snippet", "url", "sourceType", "trustLabel"}.issubset(body["sources"][0])
 
 
 def test_answer_endpoint_validates_input() -> None:
