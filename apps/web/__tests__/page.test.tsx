@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import HomePage from "../app/page";
-import { fetchAnswer } from "../lib/api";
+import { fetchAnswer, fetchSimilarTickets } from "../lib/api";
 
 vi.mock("../lib/api", async () => {
   const actual = await vi.importActual<typeof import("../lib/api")>("../lib/api");
   return {
     ...actual,
     fetchAnswer: vi.fn(),
+    fetchSimilarTickets: vi.fn(),
   };
 });
 
@@ -51,5 +52,38 @@ describe("Home page", () => {
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Official sources")).toBeInTheDocument();
     expect(screen.getByText("Suggested customer reply")).toBeInTheDocument();
+  });
+
+  it("shows similar tickets validation error when query is empty", async () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
+
+    expect(await screen.findByText("Please enter a search query before finding similar tickets.")).toBeInTheDocument();
+    expect(fetchSimilarTickets).not.toHaveBeenCalled();
+  });
+
+  it("passes a trimmed query to similar ticket search", async () => {
+    vi.mocked(fetchSimilarTickets).mockResolvedValueOnce({
+      tickets: [
+        {
+          ticketId: "T-123",
+          subject: "MFA reset request",
+          snippet: "User unable to complete MFA challenge.",
+          resolution: "Reset MFA and ask user to enroll again.",
+          confidence: 0.9,
+        },
+      ],
+    });
+
+    render(<HomePage />);
+    fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "  MFA reset issue  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
+
+    await waitFor(() => expect(fetchSimilarTickets).toHaveBeenCalledWith("MFA reset issue"));
+    expect(await screen.findByText("MFA reset request")).toBeInTheDocument();
   });
 });
