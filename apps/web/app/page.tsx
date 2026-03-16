@@ -42,12 +42,21 @@ export default function HomePage() {
   };
 
   const handleTickets = async () => {
+    const normalizedQuery = ticketQuery.trim();
+
+    if (!normalizedQuery) {
+      setTicketData(null);
+      setTicketError("Please enter a search query before finding similar tickets.");
+      return;
+    }
+
     setTicketLoading(true);
     setTicketError(null);
     try {
-      const result = await fetchSimilarTickets(ticketQuery);
+      const result = await fetchSimilarTickets(normalizedQuery);
       setTicketData(result);
     } catch (err) {
+      setTicketData(null);
       setTicketError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setTicketLoading(false);
@@ -103,7 +112,12 @@ export default function HomePage() {
                     <li key={source.id} className="rounded-md border border-slate-200 p-3">
                       <p className="font-medium">{source.title}</p>
                       <p className="mt-1 text-sm text-slate-600">{source.snippet}</p>
-                      <a className="mt-2 inline-block text-sm text-blue-700 underline" href={source.url} target="_blank">
+                      <a
+                        className="mt-2 inline-block text-sm text-blue-700 underline"
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
                         {source.url}
                       </a>
                     </li>
@@ -128,10 +142,21 @@ export default function HomePage() {
             value={ticketQuery}
             onChange={(e) => setTicketQuery(e.target.value)}
           />
-          <button className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-white" onClick={handleTickets}>
+          <button
+            className="mt-3 rounded-md bg-blue-600 px-4 py-2 text-white"
+            onClick={handleTickets}
+            disabled={ticketLoading}
+          >
             {ticketLoading ? "Searching..." : "Find tickets"}
           </button>
           {ticketError && <p className="mt-3 text-red-600">{ticketError}</p>}
+
+          {!ticketLoading && !ticketError && !ticketData && (
+            <p className="mt-3 text-sm text-slate-600">Search by issue keywords to find similar resolved tickets.</p>
+          )}
+
+          {ticketLoading && <p className="mt-3 text-sm text-slate-600">Looking up similar historical tickets...</p>}
+
           {ticketData && (
             <ul className="mt-4 space-y-3">
               {ticketData.tickets.map((ticket) => (
