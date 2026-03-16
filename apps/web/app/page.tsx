@@ -67,6 +67,10 @@ export default function HomePage() {
           {askData && (
             <div className="mt-4 space-y-3">
               <p>{askData.answer}</p>
+              <div className="rounded-md bg-slate-50 p-3 text-sm">
+                <p className="font-medium">Suggested draft reply ({askData.draftReply.confidenceLabel})</p>
+                <p>{askData.draftReply.message}</p>
+              </div>
               <ul className="list-disc pl-5 text-sm text-slate-700">
                 {askData.sources.map((source) => (
                   <li key={source.id}>
@@ -101,7 +105,9 @@ export default function HomePage() {
                   <p className="font-medium">{ticket.subject}</p>
                   <p className="text-sm text-slate-600">{ticket.snippet}</p>
                   <p className="mt-1 text-sm">Resolution: {ticket.resolution}</p>
-                  <p className="text-xs text-slate-500">Confidence: {Math.round(ticket.confidence * 100)}%</p>
+                  <p className="text-xs text-slate-500">
+                    Confidence: {Math.round(ticket.confidence * 100)}% ({ticket.confidenceLabel})
+                  </p>
                 </li>
               ))}
             </ul>
