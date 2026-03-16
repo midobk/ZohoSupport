@@ -1,7 +1,7 @@
 export type ZohoSource = {
   id: string;
   title: string;
-  summary: string;
+  snippet: string;
   url: string;
 };
 
@@ -11,6 +11,8 @@ export type AnswerRequest = {
 
 export type AnswerResponse = {
   answer: string;
+  confidenceLabel: "High" | "Medium" | "Low";
+  suggestedReply: string;
   sources: ZohoSource[];
 };
 
