@@ -11,6 +11,13 @@ from .mcp_provider_factory import (
     run_with_timeout,
 )
 from .mock_data import ZOHO_SOURCES
+from .shared_contracts import (
+    AnswerRequestContract,
+    AnswerResponseContract,
+    SimilarTicketsRequestContract,
+    SimilarTicketsResponseContract,
+    TicketSimilarityResultContract,
+)
 
 app = FastAPI(title="Zoho Support Copilot API")
 
@@ -23,16 +30,10 @@ app.add_middleware(
 )
 
 
-class AnswerRequest(BaseModel):
-    question: str = Field(..., min_length=3)
-
-
-class SimilarTicketsRequest(BaseModel):
-    query: str = Field(..., min_length=3)
-
 
 class TicketSearchRequest(BaseModel):
     query: str = Field(..., min_length=3)
+
 
 
 def get_mcp_provider() -> McpProvider:
@@ -55,8 +56,8 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/api/answer")
-def answer(payload: AnswerRequest) -> dict:
+@app.post("/api/answer", response_model=AnswerResponseContract)
+def answer(payload: AnswerRequestContract) -> AnswerResponseContract:
     normalized_question = payload.question.lower()
 
     has_reset_context = any(
@@ -85,19 +86,19 @@ def answer(payload: AnswerRequest) -> dict:
             "you through the next recovery step."
         )
 
-    return {
-        "answer": answer_text,
-        "confidenceLabel": confidence_label,
-        "suggestedReply": suggested_reply,
-        "sources": ZOHO_SOURCES,
-    }
+    return AnswerResponseContract(
+        answer=answer_text,
+        confidenceLabel=confidence_label,
+        suggestedReply=suggested_reply,
+        sources=ZOHO_SOURCES,
+    )
 
 
-@app.post("/api/similar-tickets")
+@app.post("/api/similar-tickets", response_model=SimilarTicketsResponseContract)
 def similar_tickets(
-    payload: SimilarTicketsRequest,
+    payload: SimilarTicketsRequestContract,
     provider: McpProvider = Depends(get_mcp_provider),
-) -> dict:
+) -> SimilarTicketsResponseContract:
     timeout_ms = get_provider_timeout_ms()
 
     try:
@@ -107,19 +108,19 @@ def similar_tickets(
     except McpProviderError as exc:
         _raise_http_from_provider_error(exc)
 
-    return {
-        "tickets": [
-            {
-                "ticketId": ticket.ticket_id,
-                "subject": ticket.subject,
-                "similarityScore": ticket.similarity_score,
-                "snippet": ticket.snippet,
-                "resolutionSummary": ticket.resolution_summary,
-                "draftSuggestedAnswer": ticket.draft_suggested_answer,
-            }
+    return SimilarTicketsResponseContract(
+        tickets=[
+            TicketSimilarityResultContract(
+                ticketId=ticket.ticket_id,
+                subject=ticket.subject,
+                similarityScore=ticket.similarity_score,
+                snippet=ticket.snippet,
+                resolutionSummary=ticket.resolution_summary,
+                draftSuggestedAnswer=ticket.draft_suggested_answer,
+            )
             for ticket in tickets
         ]
-    }
+    )
 
 
 @app.post("/api/tickets/search")
