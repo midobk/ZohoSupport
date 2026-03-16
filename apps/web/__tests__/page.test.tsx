@@ -58,32 +58,36 @@ describe("Home page", () => {
     render(<HomePage />);
 
     fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "   " } });
+    fireEvent.change(screen.getByLabelText("Issue or error text"), { target: { value: "   " } });
     fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
 
     expect(await screen.findByText("Please enter a search query before finding similar tickets.")).toBeInTheDocument();
     expect(fetchSimilarTickets).not.toHaveBeenCalled();
   });
 
-  it("passes a trimmed query to similar ticket search", async () => {
+  it("renders similar ticket score, resolution summary, and draft answer", async () => {
     vi.mocked(fetchSimilarTickets).mockResolvedValueOnce({
       tickets: [
         {
           ticketId: "T-123",
           subject: "MFA reset request",
           snippet: "User unable to complete MFA challenge.",
-          resolution: "Reset MFA and ask user to enroll again.",
-          confidence: 0.9,
+          resolutionSummary: "Reset MFA and ask user to enroll again.",
+          draftSuggestedAnswer: "I reset your MFA. Please enroll your authenticator again.",
+          similarityScore: 0.9,
         },
       ],
     });
 
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "  MFA reset issue  " } });
+    fireEvent.change(screen.getByLabelText("Issue or error text"), { target: { value: "  MFA reset issue  " } });
     fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
 
     await waitFor(() => expect(fetchSimilarTickets).toHaveBeenCalledWith("MFA reset issue"));
     expect(await screen.findByText("MFA reset request")).toBeInTheDocument();
+    expect(screen.getByText("Resolution summary: Reset MFA and ask user to enroll again.")).toBeInTheDocument();
+    expect(screen.getByText("Draft suggested answer: I reset your MFA. Please enroll your authenticator again.")).toBeInTheDocument();
+    expect(screen.getByText("Similarity score: 90%")).toBeInTheDocument();
   });
 });

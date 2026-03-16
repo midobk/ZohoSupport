@@ -137,9 +137,14 @@ export default function HomePage() {
       {activeTab === "similar" && (
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-xl font-medium">Similar Tickets</h2>
+          <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="similar-issue">
+            Issue or error text
+          </label>
           <input
+            id="similar-issue"
             className="w-full rounded-md border border-slate-300 p-3"
             value={ticketQuery}
+            placeholder="e.g. User is locked out after replacing their phone"
             onChange={(e) => setTicketQuery(e.target.value)}
           />
           <button
@@ -163,8 +168,9 @@ export default function HomePage() {
                 <li key={ticket.ticketId} className="rounded-md border border-slate-200 p-3">
                   <p className="font-medium">{ticket.subject}</p>
                   <p className="text-sm text-slate-600">{ticket.snippet}</p>
-                  <p className="mt-1 text-sm">Resolution: {ticket.resolution}</p>
-                  <p className="text-xs text-slate-500">Confidence: {Math.round(ticket.confidence * 100)}%</p>
+                  <p className="mt-1 text-sm">Resolution summary: {ticket.resolutionSummary}</p>
+                  <p className="mt-1 text-sm">Draft suggested answer: {ticket.draftSuggestedAnswer}</p>
+                  <p className="text-xs text-slate-500">Similarity score: {Math.round(ticket.similarityScore * 100)}%</p>
                 </li>
               ))}
             </ul>
