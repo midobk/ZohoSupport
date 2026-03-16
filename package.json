@@ -12,7 +12,8 @@
     "build": "npm --workspace @zoho/web run build",
     "test": "npm run test:web && npm run test:api",
     "test:web": "npm --workspace @zoho/web run test",
-    "test:api": "cd apps/api && python -m pytest"
+    "test:api": "./scripts/run-api-tests.sh",
+    "setup:api": "cd apps/api && python -m venv .venv && . .venv/bin/activate && python -m pip install -r requirements.txt"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
