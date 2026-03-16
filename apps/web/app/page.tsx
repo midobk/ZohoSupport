@@ -13,7 +13,7 @@ export default function HomePage() {
   const [askLoading, setAskLoading] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
 
-  const [ticketQuery, setTicketQuery] = useState("MFA reset issue");
+  const [ticketQuery, setTicketQuery] = useState("User sees invalid OTP error");
   const [ticketData, setTicketData] = useState<SimilarTicketsResponse | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
@@ -85,8 +85,13 @@ export default function HomePage() {
       {activeTab === "similar" && (
         <div className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-xl font-medium">Similar Tickets</h2>
+          <label htmlFor="similar-search" className="mb-2 block text-sm font-medium text-slate-700">
+            Search issue or error text
+          </label>
           <input
+            id="similar-search"
             className="w-full rounded-md border border-slate-300 p-3"
+            placeholder="e.g. user gets OTP expired error"
             value={ticketQuery}
             onChange={(e) => setTicketQuery(e.target.value)}
           />
@@ -99,9 +104,9 @@ export default function HomePage() {
               {ticketData.tickets.map((ticket) => (
                 <li key={ticket.ticketId} className="rounded-md border border-slate-200 p-3">
                   <p className="font-medium">{ticket.subject}</p>
-                  <p className="text-sm text-slate-600">{ticket.snippet}</p>
-                  <p className="mt-1 text-sm">Resolution: {ticket.resolution}</p>
-                  <p className="text-xs text-slate-500">Confidence: {Math.round(ticket.confidence * 100)}%</p>
+                  <p className="text-sm text-slate-600">Similarity score: {Math.round(ticket.similarityScore * 100)}%</p>
+                  <p className="mt-2 text-sm">Resolution summary: {ticket.resolutionSummary}</p>
+                  <p className="mt-1 text-sm text-slate-700">Draft suggested answer: {ticket.draftSuggestedAnswer}</p>
                 </li>
               ))}
             </ul>

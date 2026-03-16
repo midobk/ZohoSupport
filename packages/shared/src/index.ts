@@ -21,9 +21,9 @@ export type SimilarTicketsRequest = {
 export type TicketMatch = {
   ticketId: string;
   subject: string;
-  confidence: number;
-  snippet: string;
-  resolution: string;
+  similarityScore: number;
+  resolutionSummary: string;
+  draftSuggestedAnswer: string;
 };
 
 export type SimilarTicketsResponse = {

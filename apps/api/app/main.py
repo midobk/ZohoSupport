@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .mock_data import MOCK_TICKETS, ZOHO_SOURCES
+from .similar_tickets_adapter import MockMcpSimilarTicketsAdapter
 
 app = FastAPI(title="Zoho Support Copilot API")
+similar_tickets_adapter = MockMcpSimilarTicketsAdapter(MOCK_TICKETS)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,12 +44,17 @@ def answer(payload: AnswerRequest) -> dict:
 
 @app.post("/api/similar-tickets")
 def similar_tickets(payload: SimilarTicketsRequest) -> dict:
-    q = payload.query.lower()
+    results = similar_tickets_adapter.find_similar_tickets(payload.query)
 
-    ranked = sorted(
-        MOCK_TICKETS,
-        key=lambda t: (q in t["subject"].lower()) or (q in t["snippet"].lower()),
-        reverse=True,
-    )
-
-    return {"tickets": ranked}
+    return {
+        "tickets": [
+            {
+                "ticketId": ticket.ticket_id,
+                "subject": ticket.subject,
+                "similarityScore": ticket.similarity_score,
+                "resolutionSummary": ticket.resolution_summary,
+                "draftSuggestedAnswer": ticket.draft_suggested_answer,
+            }
+            for ticket in results
+        ]
+    }
