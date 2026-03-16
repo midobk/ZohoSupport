@@ -1,0 +1,7 @@
+node_modules
+.next
+coverage
+__pycache__
+.pytest_cache
+.venv
+*.pyc
