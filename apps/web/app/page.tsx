@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { AnswerResponse, SimilarTicketsResponse } from "@zoho/shared/src";
+import { AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("ask");
