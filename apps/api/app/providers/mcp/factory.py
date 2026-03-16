@@ -21,15 +21,27 @@ def _read_timeout() -> float:
     return timeout
 
 
+def _read_mock_latency_ms() -> int:
+    raw = os.getenv("MCP_MOCK_LATENCY_MS", "0")
+    try:
+        latency_ms = int(raw)
+    except ValueError as exc:
+        raise McpProviderConfigurationError("MCP_MOCK_LATENCY_MS must be an integer") from exc
+
+    if latency_ms < 0:
+        raise McpProviderConfigurationError("MCP_MOCK_LATENCY_MS must be >= 0")
+
+    return latency_ms
+
+
 def build_mcp_provider() -> McpProvider:
     provider_name = os.getenv("MCP_PROVIDER", "mock").lower().strip()
     timeout_seconds = _read_timeout()
 
     if provider_name == "mock":
-        simulated_latency_ms = int(os.getenv("MCP_MOCK_LATENCY_MS", "0"))
         return MockMcpProvider(
             timeout_seconds=timeout_seconds,
-            simulated_latency_ms=simulated_latency_ms,
+            simulated_latency_ms=_read_mock_latency_ms(),
         )
 
     if provider_name == "http":

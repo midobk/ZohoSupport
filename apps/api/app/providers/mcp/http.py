@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from json import JSONDecodeError
 from typing import Any
 
 import httpx
@@ -14,12 +15,19 @@ class HttpMcpProvider(McpProvider):
         self.timeout_seconds = timeout_seconds
 
     async def _post(self, operation: str, endpoint: str, payload: dict[str, Any]) -> Any:
-        async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-            response = await with_timeout(
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                response = await with_timeout(
+                    operation=operation,
+                    timeout_seconds=self.timeout_seconds,
+                    coro=client.post(f"{self.base_url}{endpoint}", json=payload),
+                )
+        except httpx.RequestError as exc:
+            raise McpProviderUpstreamError(
                 operation=operation,
-                timeout_seconds=self.timeout_seconds,
-                coro=client.post(f"{self.base_url}{endpoint}", json=payload),
-            )
+                status_code=0,
+                body=str(exc),
+            ) from exc
 
         if response.status_code >= 400:
             raise McpProviderUpstreamError(
@@ -28,7 +36,14 @@ class HttpMcpProvider(McpProvider):
                 body=response.text,
             )
 
-        return response.json()
+        try:
+            return response.json()
+        except JSONDecodeError as exc:
+            raise McpProviderUpstreamError(
+                operation=operation,
+                status_code=response.status_code,
+                body="Invalid JSON response from MCP upstream",
+            ) from exc
 
     async def search_tickets(self, query: str) -> list[dict[str, Any]]:
         data = await self._post(

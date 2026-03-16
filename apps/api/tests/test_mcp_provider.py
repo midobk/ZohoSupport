@@ -38,6 +38,14 @@ def test_factory_raises_for_unsupported_provider(monkeypatch: pytest.MonkeyPatch
         build_mcp_provider()
 
 
+def test_factory_raises_for_invalid_mock_latency(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_PROVIDER", "mock")
+    monkeypatch.setenv("MCP_MOCK_LATENCY_MS", "invalid")
+
+    with pytest.raises(McpProviderConfigurationError):
+        build_mcp_provider()
+
+
 def test_mock_provider_timeout() -> None:
     provider = MockMcpProvider(timeout_seconds=0.01, simulated_latency_ms=30)
 

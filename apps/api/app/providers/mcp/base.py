@@ -29,5 +29,5 @@ async def with_timeout(
 ) -> Any:
     try:
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
-    except TimeoutError as exc:
+    except asyncio.TimeoutError as exc:
         raise McpProviderTimeoutError(operation=operation, timeout_seconds=timeout_seconds) from exc
