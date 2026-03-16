@@ -21,7 +21,13 @@ Runnable monorepo for a demo-ready, mocked Zoho Support Copilot MVP.
    npm install
    ```
 
-2. Create and activate a backend virtual environment, then install backend dependencies:
+2. Bootstrap backend dependencies (works well in CodeSandbox too):
+
+   ```bash
+   npm run setup:api
+   ```
+
+   Or run manually:
 
    ```bash
    cd apps/api
@@ -74,3 +80,5 @@ Or run each suite independently:
 npm run test:web
 npm run test:api
 ```
+
+> `npm run test:api` now auto-creates `apps/api/.venv` and installs `requirements.txt` if needed, which prevents `No module named pytest` errors in fresh environments.
