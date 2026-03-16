@@ -30,12 +30,38 @@ def health() -> dict[str, str]:
 
 @app.post("/api/answer")
 def answer(payload: AnswerRequest) -> dict:
+    normalized_question = payload.question.lower()
+
+    has_reset_context = any(
+        token in normalized_question
+        for token in ["mfa", "otp", "login", "locked", "reset", "authenticator"]
+    )
+
+    if has_reset_context:
+        answer_text = (
+            "Confirm the customer's identity, reset MFA in Zoho Directory, and ask them to sign in "
+            "from a trusted device to complete new factor enrollment."
+        )
+        confidence_label = "High"
+        suggested_reply = (
+            "Thanks for reporting this. I have verified your account and reset your MFA setup. "
+            "Please sign in again and complete the prompt to configure a new authenticator on your trusted device."
+        )
+    else:
+        answer_text = (
+            "Use the Zoho sign-in troubleshooting flow: verify identity, collect screenshots of the exact error, "
+            "and apply the relevant recovery step from the KB before escalating."
+        )
+        confidence_label = "Medium"
+        suggested_reply = (
+            "I can help with this sign-in issue. Please share the exact error shown on screen, and I will guide "
+            "you through the next recovery step."
+        )
+
     return {
-        "answer": (
-            f"For '{payload.question}', start by validating the user identity, "
-            "then run the MFA reset workflow in Zoho Directory and ask the user "
-            "to complete login from a trusted device."
-        ),
+        "answer": answer_text,
+        "confidenceLabel": confidence_label,
+        "suggestedReply": suggested_reply,
         "sources": ZOHO_SOURCES,
     }
 
