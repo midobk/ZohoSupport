@@ -12,12 +12,12 @@ vi.mock("../lib/api", async () => {
 });
 
 describe("Home page", () => {
-  it("renders app heading and tabs", () => {
+  it("renders workspace heading and workflows", () => {
     render(<HomePage />);
-    expect(screen.getByText("Zoho Support Copilot")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ask" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Similar Tickets" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Live Assist" })).toBeInTheDocument();
+    expect(screen.getByText("Support Copilot Workspace")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ask/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Similar Tickets/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Live Assist/ })).toBeInTheDocument();
   });
 
   it("shows ask validation error when question is empty", async () => {
@@ -50,14 +50,14 @@ describe("Home page", () => {
     await waitFor(() => expect(fetchAnswer).toHaveBeenCalled());
     expect(await screen.findByText("Concise answer")).toBeInTheDocument();
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
-    expect(screen.getByText("Official sources")).toBeInTheDocument();
+    expect(screen.getByText("Source Rail")).toBeInTheDocument();
     expect(screen.getByText("Suggested customer reply")).toBeInTheDocument();
   });
 
   it("shows similar tickets validation error when query is empty", async () => {
     render(<HomePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
+    fireEvent.click(screen.getByRole("button", { name: /Similar Tickets/ }));
     fireEvent.change(screen.getByLabelText("Issue or error text"), { target: { value: "   " } });
     fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
 
@@ -80,14 +80,14 @@ describe("Home page", () => {
     });
 
     render(<HomePage />);
-    fireEvent.click(screen.getByRole("button", { name: "Similar Tickets" }));
+    fireEvent.click(screen.getByRole("button", { name: /Similar Tickets/ }));
     fireEvent.change(screen.getByLabelText("Issue or error text"), { target: { value: "  MFA reset issue  " } });
     fireEvent.click(screen.getByRole("button", { name: "Find tickets" }));
 
     await waitFor(() => expect(fetchSimilarTickets).toHaveBeenCalledWith("MFA reset issue"));
-    expect(await screen.findByText("MFA reset request")).toBeInTheDocument();
+    expect(await screen.findAllByText("MFA reset request")).toHaveLength(2);
     expect(screen.getByText("Resolution summary: Reset MFA and ask user to enroll again.")).toBeInTheDocument();
     expect(screen.getByText("Draft suggested answer: I reset your MFA. Please enroll your authenticator again.")).toBeInTheDocument();
-    expect(screen.getByText("Similarity score: 90%")).toBeInTheDocument();
+    expect(screen.getByText("90% match")).toBeInTheDocument();
   });
 });
