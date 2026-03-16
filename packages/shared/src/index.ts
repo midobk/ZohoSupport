@@ -6,6 +6,8 @@ export type SourceResult = {
   title: string;
   snippet: string;
   url: string;
+  sourceType: "OfficialKB" | "HistoricalTicket";
+  trustLabel: "Verified" | "Unverified";
 };
 
 export type AnswerRequest = {
@@ -73,7 +75,23 @@ const parseSourceResult = (value: unknown): SourceResult => {
     title: parseString((value as Record<string, unknown>).title, "source.title"),
     snippet: parseString((value as Record<string, unknown>).snippet, "source.snippet"),
     url: parseUrl((value as Record<string, unknown>).url, "source.url"),
+    sourceType: parseSourceType((value as Record<string, unknown>).sourceType),
+    trustLabel: parseTrustLabel((value as Record<string, unknown>).trustLabel),
   };
+};
+
+const parseSourceType = (value: unknown): SourceResult["sourceType"] => {
+  if (value === "OfficialKB" || value === "HistoricalTicket") {
+    return value;
+  }
+  throw new Error("Invalid field: sourceType");
+};
+
+const parseTrustLabel = (value: unknown): SourceResult["trustLabel"] => {
+  if (value === "Verified" || value === "Unverified") {
+    return value;
+  }
+  throw new Error("Invalid field: trustLabel");
 };
 
 export const answerRequestSchema: Parser<AnswerRequest> = {

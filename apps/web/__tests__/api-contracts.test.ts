@@ -18,6 +18,8 @@ describe("API contract validation", () => {
             title: "MFA reset",
             snippet: "Reset steps",
             url: "https://help.zoho.com/kb/mfa",
+            sourceType: "OfficialKB",
+            trustLabel: "Verified",
           },
         ],
       }),

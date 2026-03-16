@@ -4,18 +4,24 @@ ZOHO_SOURCES = [
         "title": "Reset Multi-Factor Authentication for Locked Users",
         "snippet": "Verify requester identity, revoke old factors, and force re-enrollment from a trusted device.",
         "url": "https://help.zoho.com/portal/en/kb/accounts/security/mfa-reset",
+        "sourceType": "OfficialKB",
+        "trustLabel": "Verified",
     },
     {
         "id": "kb-204",
         "title": "Troubleshooting Login Challenges",
         "snippet": "Use this checklist for delayed OTPs, mismatched authenticator apps, and temporary lockouts.",
         "url": "https://help.zoho.com/portal/en/kb/accounts/login-troubleshooting",
+        "sourceType": "OfficialKB",
+        "trustLabel": "Verified",
     },
     {
         "id": "kb-322",
         "title": "Account Recovery and Sign-in Verification Best Practices",
         "snippet": "Escalation criteria and communication template for users who cannot complete MFA.",
         "url": "https://help.zoho.com/portal/en/kb/accounts/recovery/sign-in-verification",
+        "sourceType": "OfficialKB",
+        "trustLabel": "Verified",
     },
 ]
 

@@ -17,6 +17,23 @@ def test_answer_response_contract_validates_confidence_label() -> None:
         )
 
 
+def test_answer_response_contract_requires_source_trust_metadata() -> None:
+    with pytest.raises(ValidationError):
+        AnswerResponseContract(
+            answer="Use reset flow",
+            confidenceLabel="High",
+            suggestedReply="Please try this.",
+            sources=[
+                {
+                    "id": "kb-1",
+                    "title": "Reset MFA",
+                    "snippet": "steps",
+                    "url": "https://help.zoho.com/kb/mfa",
+                }
+            ],
+        )
+
+
 def test_ticket_similarity_result_contract_enforces_score_range() -> None:
     with pytest.raises(ValidationError):
         TicketSimilarityResultContract(
