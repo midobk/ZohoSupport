@@ -22,7 +22,7 @@ class AnswerComposer(Protocol):
     def is_enabled(self) -> bool:
         """Return True when the composer is configured and should be used."""
 
-    def describe(self) -> ComposerDescriptor:
+    def describe(self, *, model: str | None = None) -> ComposerDescriptor:
         """Return user-facing information about the active composer."""
 
     def compose_answer(
@@ -31,5 +31,6 @@ class AnswerComposer(Protocol):
         question: str,
         official_sources: Iterable[dict[str, str]],
         community_sources: Iterable[dict[str, str]],
+        model: str | None = None,
     ) -> ComposedAnswer:
         """Compose a grounded answer from retrieved sources."""

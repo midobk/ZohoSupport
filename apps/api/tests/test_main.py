@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi.testclient import TestClient
 
 from app.main import app, get_ask_provider
@@ -7,14 +9,17 @@ from app.shared_contracts import AnswerRequestMode, AnswerResponseContract
 class StubAskProvider:
     def __init__(self) -> None:
         self.last_mode = AnswerRequestMode.SEARCH
+        self.last_model: str | None = None
 
     def answer_question(
         self,
         question: str,
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
+        model: str | None = None,
     ) -> AnswerResponseContract:
         self.last_mode = mode
+        self.last_model = model
         return AnswerResponseContract.model_validate(
             {
                 "answer": f"Grounded answer for: {question}",
@@ -71,6 +76,7 @@ def test_answer_endpoint_returns_ask_flow_payload() -> None:
     assert body["generation"]["mode"] in {"AI", "Search"}
     assert isinstance(body["generation"]["description"], str)
     assert stub_provider.last_mode == AnswerRequestMode.SEARCH
+    assert stub_provider.last_model is None
     assert len(body["sources"]) == 2
     assert {"title", "snippet", "url", "sourceType", "trustLabel"}.issubset(body["sources"][0])
     assert {source["sourceType"] for source in body["sources"]} == {"OfficialKB", "CommunityPost"}
@@ -82,8 +88,12 @@ def test_answer_endpoint_validates_input() -> None:
 
 
 def test_answer_endpoint_passes_ai_mode_to_provider() -> None:
-    response = client.post("/api/answer", json={"question": "How do I reset MFA?", "mode": "ai"})
+    response = client.post(
+        "/api/answer",
+        json={"question": "How do I reset MFA?", "mode": "ai", "model": "gemini-2.5-flash-lite"},
+    )
 
     assert response.status_code == 200
     assert response.json()["generation"]["mode"] == "AI"
     assert stub_provider.last_mode == AnswerRequestMode.AI
+    assert stub_provider.last_model == "gemini-2.5-flash-lite"

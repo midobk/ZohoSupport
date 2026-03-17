@@ -32,8 +32,12 @@ async function readErrorMessage(res: Response, fallback: string): Promise<string
   return fallback;
 }
 
-export async function fetchAnswer(question: string, mode: AnswerRequestMode = "search"): Promise<AnswerResponse> {
-  const payload = answerRequestSchema.parse({ question, mode });
+export async function fetchAnswer(
+  question: string,
+  mode: AnswerRequestMode = "search",
+  model?: string,
+): Promise<AnswerResponse> {
+  const payload = answerRequestSchema.parse({ question, mode, model });
 
   const res = await fetch(`${API_BASE_URL}/api/answer`, {
     method: "POST",

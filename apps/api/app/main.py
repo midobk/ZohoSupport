@@ -78,7 +78,7 @@ def answer(
     provider: AskProvider = Depends(get_ask_provider),
 ) -> AnswerResponseContract:
     try:
-        return provider.answer_question(payload.question, mode=payload.mode)
+        return provider.answer_question(payload.question, mode=payload.mode, model=payload.model)
     except AskProviderError as exc:
         _raise_http_from_ask_provider_error(exc)
 

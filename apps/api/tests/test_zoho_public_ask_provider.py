@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import httpx
 
 from app.openai_answer_composer import OpenAiAnswerComposer
@@ -209,20 +211,28 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
         def is_enabled(self) -> bool:
             return True
 
-        def describe(self):
+        def describe(self, *, model: str | None = None):
             return type(
                 "ComposerDescriptor",
                 (),
                 {
                     "providerLabel": "Google Gemini",
-                    "modelLabel": "gemini-2.5-flash",
+                    "modelLabel": model or "gemini-2.5-flash",
                 },
             )()
 
-        def compose_answer(self, *, question: str, official_sources: list[dict[str, str]], community_sources: list[dict[str, str]]):
+        def compose_answer(
+            self,
+            *,
+            question: str,
+            official_sources: list[dict[str, str]],
+            community_sources: list[dict[str, str]],
+            model: str | None = None,
+        ):
             assert "locked user" in question
             assert official_sources[0]["source_type"] == "official_kb"
             assert community_sources[0]["source_type"] == "community_post"
+            assert model == "gemini-2.5-flash-lite"
             return type(
                 "ComposedAnswer",
                 (),
@@ -236,13 +246,17 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
     provider = build_provider()
     provider._answer_composer = StubComposer()  # type: ignore[attr-defined]
 
-    result = provider.answer_question("How do I reset MFA for a locked user?", mode=AnswerRequestMode.AI)
+    result = provider.answer_question(
+        "How do I reset MFA for a locked user?",
+        mode=AnswerRequestMode.AI,
+        model="gemini-2.5-flash-lite",
+    )
 
     assert result.answer == "AI-composed answer grounded in official Zoho sources."
     assert result.suggestedReply == "AI-composed customer-ready reply."
     assert result.generation.mode == "AI"
     assert "google gemini" in result.generation.description.lower()
-    assert "gemini-2.5-flash" in result.generation.description
+    assert "gemini-2.5-flash-lite" in result.generation.description
     assert "normal search" in result.generation.description.lower()
 
 
@@ -251,13 +265,13 @@ def test_live_ask_provider_skips_ai_when_search_mode_is_selected() -> None:
         def is_enabled(self) -> bool:
             return True
 
-        def describe(self):
+        def describe(self, *, model: str | None = None):
             return type(
                 "ComposerDescriptor",
                 (),
                 {
                     "providerLabel": "Google Gemini",
-                    "modelLabel": "gemini-2.5-flash",
+                    "modelLabel": model or "gemini-2.5-flash",
                 },
             )()
 

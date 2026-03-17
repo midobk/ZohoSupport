@@ -1,6 +1,8 @@
 import httpx
+import pytest
 
 from app.gemini_answer_composer import GeminiAnswerComposer
+from app.ask_provider import AskProviderConfigurationError
 
 
 def test_gemini_answer_composer_parses_structured_json_response() -> None:
@@ -106,3 +108,61 @@ def test_gemini_answer_composer_repairs_newlines_inside_json_strings() -> None:
 
     assert result.confidenceLabel == "High"
     assert "\n" in result.answer
+
+
+def test_gemini_answer_composer_uses_requested_model_override() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1beta/models/gemini-2.5-flash-lite:generateContent"
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": (
+                                        '{"answer":"Use the admin flow to reset MFA.",'
+                                        '"suggestedReply":"I reset MFA for your account.",'
+                                        '"confidenceLabel":"High"}'
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+        )
+
+    composer = GeminiAnswerComposer(
+        client=httpx.Client(transport=httpx.MockTransport(handler), timeout=5.0),
+        api_key="gemini-test-key",
+        model="gemini-2.5-flash",
+        base_url="https://generativelanguage.googleapis.com/v1beta",
+        enabled=True,
+    )
+
+    result = composer.compose_answer(
+        question="How do I reset MFA for a locked user?",
+        official_sources=[],
+        community_sources=[],
+        model="gemini-2.5-flash-lite",
+    )
+
+    assert result.confidenceLabel == "High"
+
+
+def test_gemini_answer_composer_rejects_unknown_model() -> None:
+    composer = GeminiAnswerComposer(
+        api_key="gemini-test-key",
+        model="gemini-2.5-flash",
+        enabled=True,
+    )
+
+    with pytest.raises(AskProviderConfigurationError):
+        composer.compose_answer(
+            question="How do I reset MFA for a locked user?",
+            official_sources=[],
+            community_sources=[],
+            model="gemini-3.1-flash-lite",
+        )

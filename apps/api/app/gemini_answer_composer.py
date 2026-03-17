@@ -12,6 +12,12 @@ from .ask_provider import AskProviderConfigurationError, AskProviderUnavailableE
 
 DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+SUPPORTED_GEMINI_MODELS = {
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-3-flash-preview",
+}
 
 
 class GeminiAnswerComposer(AnswerComposer):
@@ -33,8 +39,8 @@ class GeminiAnswerComposer(AnswerComposer):
     def is_enabled(self) -> bool:
         return self._enabled and bool(self._api_key)
 
-    def describe(self) -> ComposerDescriptor:
-        return ComposerDescriptor(providerLabel="Google Gemini", modelLabel=self._model)
+    def describe(self, *, model: str | None = None) -> ComposerDescriptor:
+        return ComposerDescriptor(providerLabel="Google Gemini", modelLabel=self._resolve_model(model))
 
     def compose_answer(
         self,
@@ -42,9 +48,12 @@ class GeminiAnswerComposer(AnswerComposer):
         question: str,
         official_sources: Iterable[dict[str, str]],
         community_sources: Iterable[dict[str, str]],
+        model: str | None = None,
     ) -> ComposedAnswer:
         if not self.is_enabled():
             raise AskProviderConfigurationError("Gemini answer composition is not enabled")
+
+        resolved_model = self._resolve_model(model)
 
         system_prompt = (
             "You are a support copilot for Zoho products. "
@@ -97,7 +106,7 @@ class GeminiAnswerComposer(AnswerComposer):
 
         try:
             response = self._client.post(
-                f"{self._base_url}/models/{self._model}:generateContent",
+                f"{self._base_url}/models/{resolved_model}:generateContent",
                 params={"key": self._api_key},
                 headers={"Content-Type": "application/json"},
                 json=request_body,
@@ -187,3 +196,16 @@ class GeminiAnswerComposer(AnswerComposer):
         if raw_value is None:
             return default
         return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
+    def _resolve_model(self, requested_model: str | None) -> str:
+        candidate = (requested_model or self._model).strip()
+        if candidate in SUPPORTED_GEMINI_MODELS:
+            return candidate
+
+        raise AskProviderConfigurationError(
+            f"Unsupported Gemini model '{candidate}'",
+            details={
+                "requestedModel": candidate,
+                "supportedModels": sorted(SUPPORTED_GEMINI_MODELS),
+            },
+        )

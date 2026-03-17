@@ -20,6 +20,7 @@ describe("Home page", () => {
     expect(screen.getByRole("button", { name: /Live Assist/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Normal search" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "AI-assisted" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByLabelText("Gemini model")).not.toBeInTheDocument();
   });
 
   it("shows ask validation error when question is empty", async () => {
@@ -64,7 +65,7 @@ describe("Home page", () => {
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "search"));
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "search", undefined));
     expect(await screen.findByText("Concise answer")).toBeInTheDocument();
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Source Rail")).toBeInTheDocument();
@@ -102,9 +103,40 @@ describe("Home page", () => {
 
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "AI-assisted" }));
+    expect(screen.getByLabelText("Gemini model")).toHaveValue("gemini-2.5-flash-lite");
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai"));
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-flash-lite"));
+  });
+
+  it("lets the user choose a different Gemini model", async () => {
+    vi.mocked(fetchAnswer).mockResolvedValueOnce({
+      answer: "AI answer",
+      confidenceLabel: "High",
+      suggestedReply: "AI suggested reply",
+      generation: {
+        mode: "AI",
+        label: "AI answer",
+        description: "The results were retrieved from Zoho's normal search first. Then Google Gemini using the gemini-2.5-pro model drafted the answer text.",
+      },
+      sources: [
+        {
+          id: "kb-101",
+          title: "Reset MFA article",
+          snippet: "Reset steps",
+          url: "https://help.zoho.com/portal/en/kb/accounts/security/mfa-reset",
+          sourceType: "OfficialKB",
+          trustLabel: "Verified",
+        },
+      ],
+    });
+
+    render(<HomePage />);
+    fireEvent.click(screen.getByRole("button", { name: "AI-assisted" }));
+    fireEvent.change(screen.getByLabelText("Gemini model"), { target: { value: "gemini-2.5-pro" } });
+    fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
+
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-pro"));
   });
 
   it("shows similar tickets validation error when query is empty", async () => {

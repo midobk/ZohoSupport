@@ -10,11 +10,39 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AnswerRequestMode, AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
 
+const GEMINI_MODEL_OPTIONS = [
+  {
+    id: "gemini-2.5-flash-lite",
+    label: "Gemini 2.5 Flash-Lite",
+    requestsPerDayLabel: "1,000/day free tier",
+    note: "Highest published daily limit in the current Gemini free-tier table.",
+  },
+  {
+    id: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
+    requestsPerDayLabel: "250/day free tier",
+    note: "Balanced speed and quality.",
+  },
+  {
+    id: "gemini-2.5-pro",
+    label: "Gemini 2.5 Pro",
+    requestsPerDayLabel: "100/day free tier",
+    note: "Best reasoning, lowest published daily cap in this list.",
+  },
+  {
+    id: "gemini-3-flash-preview",
+    label: "Gemini 3 Flash Preview",
+    requestsPerDayLabel: "RPD not published",
+    note: "Preview model. Google does not currently publish a standard free-tier daily limit for it in the main quota table.",
+  },
+] as const;
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("ask");
 
   const [askQuery, setAskQuery] = useState("How do I reset MFA for a locked user?");
   const [askMode, setAskMode] = useState<AnswerRequestMode>("search");
+  const [askModel, setAskModel] = useState<string>("gemini-2.5-flash-lite");
   const [askData, setAskData] = useState<AnswerResponse | null>(null);
   const [askLoading, setAskLoading] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
@@ -76,8 +104,17 @@ export default function HomePage() {
     },
   };
 
+  const selectedAskModel = GEMINI_MODEL_OPTIONS.find((option) => option.id === askModel) ?? GEMINI_MODEL_OPTIONS[0];
+
   const handleAskModeChange = (mode: AnswerRequestMode) => {
     setAskMode(mode);
+    setAskData(null);
+    setAskError(null);
+    setShowAskGenerationInfo(false);
+  };
+
+  const handleAskModelChange = (model: string) => {
+    setAskModel(model);
     setAskData(null);
     setAskError(null);
     setShowAskGenerationInfo(false);
@@ -97,7 +134,7 @@ export default function HomePage() {
     setShowAskGenerationInfo(false);
 
     try {
-      const result = await fetchAnswer(normalizedQuestion, askMode);
+      const result = await fetchAnswer(normalizedQuestion, askMode, askMode === "ai" ? askModel : undefined);
       setAskData(result);
     } catch (err) {
       setAskData(null);
@@ -189,6 +226,28 @@ export default function HomePage() {
                     ? "Normal search uses Zoho search only. No AI is used for retrieval or wording."
                     : "AI-assisted uses the same Zoho search results, then an AI model drafts the answer text."}
                 </p>
+                {askMode === "ai" && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-slate-700" htmlFor="ask-model">
+                      Gemini model
+                    </label>
+                    <select
+                      id="ask-model"
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-white p-3 text-sm"
+                      value={askModel}
+                      onChange={(e) => handleAskModelChange(e.target.value)}
+                    >
+                      {GEMINI_MODEL_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label} ({option.requestsPerDayLabel})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {selectedAskModel.requestsPerDayLabel}. {selectedAskModel.note}
+                    </p>
+                  </div>
+                )}
               </div>
               <textarea
                 id="ask-question"

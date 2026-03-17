@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -19,6 +20,7 @@ class AnswerRequestMode(str, Enum):
 class AnswerRequestContract(BaseModel):
     question: str = Field(..., min_length=3)
     mode: AnswerRequestMode = AnswerRequestMode.SEARCH
+    model: Optional[str] = None
 
 
 class AnswerGenerationMode(str, Enum):

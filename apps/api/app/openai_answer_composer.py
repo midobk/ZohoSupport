@@ -33,7 +33,7 @@ class OpenAiAnswerComposer(AnswerComposer):
     def is_enabled(self) -> bool:
         return self._enabled and bool(self._api_key)
 
-    def describe(self) -> ComposerDescriptor:
+    def describe(self, *, model: str | None = None) -> ComposerDescriptor:
         return ComposerDescriptor(providerLabel="OpenAI", modelLabel=self._model)
 
     def compose_answer(
@@ -42,6 +42,7 @@ class OpenAiAnswerComposer(AnswerComposer):
         question: str,
         official_sources: Iterable[dict[str, str]],
         community_sources: Iterable[dict[str, str]],
+        model: str | None = None,
     ) -> ComposedAnswer:
         if not self.is_enabled():
             raise AskProviderConfigurationError("OpenAI answer composition is not enabled")

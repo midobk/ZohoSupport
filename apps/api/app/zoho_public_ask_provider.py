@@ -125,6 +125,7 @@ class ZohoPublicAskProvider(AskProvider):
         question: str,
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
+        model: str | None = None,
     ) -> AnswerResponseContract:
         official_sources = self._search_kb_articles(question)
         community_sources = self._search_community_topics(question) if self._include_community else []
@@ -162,12 +163,13 @@ class ZohoPublicAskProvider(AskProvider):
                     question=question,
                     official_sources=[self._source_payload(result) for result in official_sources],
                     community_sources=[self._community_payload(result) for result in community_sources],
+                    model=model,
                 )
                 return AnswerResponseContract(
                     answer=composed_answer.answer,
                     confidenceLabel=composed_answer.confidenceLabel,
                     suggestedReply=composed_answer.suggestedReply,
-                    generation=self._build_ai_generation(community_used=bool(community_sources)),
+                    generation=self._build_ai_generation(community_used=bool(community_sources), model=model),
                     sources=sources,
                 )
             except AskProviderUnavailableError:
@@ -196,8 +198,8 @@ class ZohoPublicAskProvider(AskProvider):
             sources=sources,
         )
 
-    def _build_ai_generation(self, *, community_used: bool) -> AnswerGenerationContract:
-        descriptor = self._answer_composer.describe()
+    def _build_ai_generation(self, *, community_used: bool, model: str | None = None) -> AnswerGenerationContract:
+        descriptor = self._answer_composer.describe(model=model)
         description = (
             "The results were retrieved from Zoho's normal search first. "
             f"Then {descriptor.providerLabel} using the {descriptor.modelLabel} model drafted the answer text."

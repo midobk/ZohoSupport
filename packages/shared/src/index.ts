@@ -21,6 +21,7 @@ export type SourceResult = {
 export type AnswerRequest = {
   question: string;
   mode: AnswerRequestMode;
+  model?: string;
 };
 
 export type AnswerResponse = {
@@ -142,6 +143,9 @@ export const answerRequestSchema: Parser<AnswerRequest> = {
       mode: value && typeof value === "object" && "mode" in (value as Record<string, unknown>)
         ? parseAnswerRequestMode((value as Record<string, unknown>).mode)
         : "search",
+      model: value && typeof value === "object" && "model" in (value as Record<string, unknown>)
+        ? parseString((value as Record<string, unknown>).model, "model")
+        : undefined,
     };
   },
 };

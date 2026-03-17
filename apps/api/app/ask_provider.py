@@ -11,6 +11,7 @@ class AskProvider(Protocol):
         question: str,
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
+        model: str | None = None,
     ) -> AnswerResponseContract:
         """Return a grounded answer and supporting sources for the Ask flow."""
 

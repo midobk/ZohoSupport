@@ -18,6 +18,7 @@ class MockAskProvider(AskProvider):
         question: str,
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
+        model: str | None = None,
     ) -> AnswerResponseContract:
         normalized_question = question.lower()
 
