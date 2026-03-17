@@ -1,23 +1,33 @@
 export type ConfidenceLabel = "High" | "Medium" | "Low";
 export type DraftReply = string;
+export type AnswerGenerationMode = "AI" | "Search";
+export type AnswerRequestMode = "ai" | "search";
+
+export type AnswerGeneration = {
+  mode: AnswerGenerationMode;
+  label: string;
+  description: string;
+};
 
 export type SourceResult = {
   id: string;
   title: string;
   snippet: string;
   url: string;
-  sourceType: "OfficialKB" | "HistoricalTicket";
+  sourceType: "OfficialKB" | "CommunityPost" | "HistoricalTicket";
   trustLabel: "Verified" | "Unverified";
 };
 
 export type AnswerRequest = {
   question: string;
+  mode: AnswerRequestMode;
 };
 
 export type AnswerResponse = {
   answer: string;
   confidenceLabel: ConfidenceLabel;
   suggestedReply: DraftReply;
+  generation: AnswerGeneration;
   sources: SourceResult[];
 };
 
@@ -54,6 +64,20 @@ const parseConfidenceLabel = (value: unknown): ConfidenceLabel => {
   throw new Error("Invalid field: confidenceLabel");
 };
 
+const parseAnswerRequestMode = (value: unknown): AnswerRequestMode => {
+  if (value === "ai" || value === "search") {
+    return value;
+  }
+  throw new Error("Invalid field: mode");
+};
+
+const parseAnswerGenerationMode = (value: unknown): AnswerGenerationMode => {
+  if (value === "AI" || value === "Search") {
+    return value;
+  }
+  throw new Error("Invalid field: generation.mode");
+};
+
 const parseUrl = (value: unknown, fieldName: string): string => {
   const candidate = parseString(value, fieldName);
   try {
@@ -80,8 +104,21 @@ const parseSourceResult = (value: unknown): SourceResult => {
   };
 };
 
+const parseAnswerGeneration = (value: unknown): AnswerGeneration => {
+  if (!value || typeof value !== "object") {
+    throw new Error("Invalid field: generation");
+  }
+
+  const raw = value as Record<string, unknown>;
+  return {
+    mode: parseAnswerGenerationMode(raw.mode),
+    label: parseString(raw.label, "generation.label"),
+    description: parseString(raw.description, "generation.description"),
+  };
+};
+
 const parseSourceType = (value: unknown): SourceResult["sourceType"] => {
-  if (value === "OfficialKB" || value === "HistoricalTicket") {
+  if (value === "OfficialKB" || value === "CommunityPost" || value === "HistoricalTicket") {
     return value;
   }
   throw new Error("Invalid field: sourceType");
@@ -102,6 +139,9 @@ export const answerRequestSchema: Parser<AnswerRequest> = {
 
     return {
       question: parseString((value as Record<string, unknown>).question, "question", 3),
+      mode: value && typeof value === "object" && "mode" in (value as Record<string, unknown>)
+        ? parseAnswerRequestMode((value as Record<string, unknown>).mode)
+        : "search",
     };
   },
 };
@@ -122,6 +162,7 @@ export const answerResponseSchema: Parser<AnswerResponse> = {
       answer: parseString(raw.answer, "answer"),
       confidenceLabel: parseConfidenceLabel(raw.confidenceLabel),
       suggestedReply: parseString(raw.suggestedReply, "suggestedReply"),
+      generation: parseAnswerGeneration(raw.generation),
       sources,
     };
   },

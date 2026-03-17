@@ -12,6 +12,11 @@ describe("API contract validation", () => {
         answer: "Use Zoho directory reset",
         confidenceLabel: "High",
         suggestedReply: "I've reset MFA for your account.",
+        generation: {
+          mode: "AI",
+          label: "AI answer",
+          description: "This answer was drafted with Google Gemini using the gemini-2.5-flash model after searching Zoho's official knowledge base.",
+        },
         sources: [
           {
             id: "kb-101",
@@ -25,9 +30,17 @@ describe("API contract validation", () => {
       }),
     } as Response);
 
-    await expect(fetchAnswer("How do I reset MFA?")).resolves.toMatchObject({
+    await expect(fetchAnswer("How do I reset MFA?", "ai")).resolves.toMatchObject({
       confidenceLabel: "High",
     });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/backend/api/answer",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ question: "How do I reset MFA?", mode: "ai" }),
+      }),
+    );
   });
 
   it("rejects invalid answer response", async () => {
@@ -38,7 +51,7 @@ describe("API contract validation", () => {
       }),
     } as Response);
 
-    await expect(fetchAnswer("How do I reset MFA?")).rejects.toThrow();
+    await expect(fetchAnswer("How do I reset MFA?", "search")).rejects.toThrow();
   });
 
   it("rejects invalid similar tickets response", async () => {

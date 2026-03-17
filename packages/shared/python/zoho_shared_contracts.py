@@ -11,12 +11,30 @@ class ConfidenceLabel(str, Enum):
     LOW = "Low"
 
 
+class AnswerRequestMode(str, Enum):
+    AI = "ai"
+    SEARCH = "search"
+
+
 class AnswerRequestContract(BaseModel):
     question: str = Field(..., min_length=3)
+    mode: AnswerRequestMode = AnswerRequestMode.SEARCH
+
+
+class AnswerGenerationMode(str, Enum):
+    AI = "AI"
+    SEARCH = "Search"
+
+
+class AnswerGenerationContract(BaseModel):
+    mode: AnswerGenerationMode
+    label: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1)
 
 
 class SourceType(str, Enum):
     OFFICIAL_KB = "OfficialKB"
+    COMMUNITY_POST = "CommunityPost"
     HISTORICAL_TICKET = "HistoricalTicket"
 
 
@@ -38,6 +56,7 @@ class AnswerResponseContract(BaseModel):
     answer: str = Field(..., min_length=1)
     confidenceLabel: ConfidenceLabel
     suggestedReply: str = Field(..., min_length=1)
+    generation: AnswerGenerationContract
     sources: list[SourceResultContract]
 
 

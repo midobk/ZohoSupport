@@ -1,4 +1,5 @@
 import {
+  AnswerRequestMode,
   AnswerResponse,
   SimilarTicketsResponse,
   answerRequestSchema,
@@ -31,8 +32,8 @@ async function readErrorMessage(res: Response, fallback: string): Promise<string
   return fallback;
 }
 
-export async function fetchAnswer(question: string): Promise<AnswerResponse> {
-  const payload = answerRequestSchema.parse({ question });
+export async function fetchAnswer(question: string, mode: AnswerRequestMode = "search"): Promise<AnswerResponse> {
+  const payload = answerRequestSchema.parse({ question, mode });
 
   const res = await fetch(`${API_BASE_URL}/api/answer`, {
     method: "POST",

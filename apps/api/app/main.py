@@ -4,13 +4,14 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from .ask_provider import AskProvider, AskProviderError
+from .ask_provider_factory import resolve_ask_provider
 from .mcp_provider import McpProvider, McpProviderError
 from .mcp_provider_factory import (
     get_provider_timeout_ms,
     resolve_mcp_provider,
     run_with_timeout,
 )
-from .mock_data import ZOHO_SOURCES
 from .shared_contracts import (
     AnswerRequestContract,
     AnswerResponseContract,
@@ -40,7 +41,22 @@ def get_mcp_provider() -> McpProvider:
     return resolve_mcp_provider()
 
 
+def get_ask_provider() -> AskProvider:
+    return resolve_ask_provider()
+
+
 def _raise_http_from_provider_error(exc: McpProviderError) -> None:
+    raise HTTPException(
+        status_code=exc.status_code,
+        detail={
+            "code": exc.code,
+            "message": exc.message,
+            "details": exc.details,
+        },
+    ) from exc
+
+
+def _raise_http_from_ask_provider_error(exc: AskProviderError) -> None:
     raise HTTPException(
         status_code=exc.status_code,
         detail={
@@ -57,41 +73,14 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/answer", response_model=AnswerResponseContract)
-def answer(payload: AnswerRequestContract) -> AnswerResponseContract:
-    normalized_question = payload.question.lower()
-
-    has_reset_context = any(
-        token in normalized_question
-        for token in ["mfa", "otp", "login", "locked", "reset", "authenticator"]
-    )
-
-    if has_reset_context:
-        answer_text = (
-            "Confirm the customer's identity, reset MFA in Zoho Directory, and ask them to sign in "
-            "from a trusted device to complete new factor enrollment."
-        )
-        confidence_label = "High"
-        suggested_reply = (
-            "Thanks for reporting this. I have verified your account and reset your MFA setup. "
-            "Please sign in again and complete the prompt to configure a new authenticator on your trusted device."
-        )
-    else:
-        answer_text = (
-            "Use the Zoho sign-in troubleshooting flow: verify identity, collect screenshots of the exact error, "
-            "and apply the relevant recovery step from the KB before escalating."
-        )
-        confidence_label = "Medium"
-        suggested_reply = (
-            "I can help with this sign-in issue. Please share the exact error shown on screen, and I will guide "
-            "you through the next recovery step."
-        )
-
-    return AnswerResponseContract(
-        answer=answer_text,
-        confidenceLabel=confidence_label,
-        suggestedReply=suggested_reply,
-        sources=ZOHO_SOURCES,
-    )
+def answer(
+    payload: AnswerRequestContract,
+    provider: AskProvider = Depends(get_ask_provider),
+) -> AnswerResponseContract:
+    try:
+        return provider.answer_question(payload.question, mode=payload.mode)
+    except AskProviderError as exc:
+        _raise_http_from_ask_provider_error(exc)
 
 
 @app.post("/api/similar-tickets", response_model=SimilarTicketsResponseContract)

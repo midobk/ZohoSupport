@@ -23,6 +23,20 @@ api_dir() {
   echo "$(api_repo_root)/apps/api"
 }
 
+load_repo_env() {
+  local repo_root
+
+  repo_root="$(api_repo_root)"
+
+  if [ -f "${repo_root}/.env.local" ]; then
+    # Export all vars from .env.local for child processes like uvicorn.
+    set -a
+    # shellcheck disable=SC1091
+    source "${repo_root}/.env.local"
+    set +a
+  fi
+}
+
 ensure_api_venv() {
   local python_bin
   local target_api_dir

@@ -18,6 +18,8 @@ describe("Home page", () => {
     expect(screen.getByRole("button", { name: /Ask/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Similar Tickets/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Live Assist/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Search only" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "AI" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("shows ask validation error when question is empty", async () => {
@@ -34,6 +36,11 @@ describe("Home page", () => {
       answer: "Reset MFA from Zoho Directory and re-enroll from a trusted device.",
       confidenceLabel: "High",
       suggestedReply: "I reset MFA. Please sign in and set up a new authenticator.",
+      generation: {
+        mode: "AI",
+        label: "AI answer",
+        description: "This answer was drafted with Google Gemini using the gemini-2.5-flash model after searching Zoho's official knowledge base.",
+      },
       sources: [
         {
           id: "kb-101",
@@ -43,18 +50,61 @@ describe("Home page", () => {
           sourceType: "OfficialKB",
           trustLabel: "Verified",
         },
+        {
+          id: "community-201",
+          title: "Admin discussion about MFA lockouts",
+          snippet: "Community members discuss MFA reset edge cases for locked users.",
+          url: "https://help.zoho.com/portal/en/community/topic/admin-discussion-about-mfa-lockouts",
+          sourceType: "CommunityPost",
+          trustLabel: "Unverified",
+        },
       ],
     });
 
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalled());
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "search"));
     expect(await screen.findByText("Concise answer")).toBeInTheDocument();
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Source Rail")).toBeInTheDocument();
     expect(screen.getByText("Verified")).toBeInTheDocument();
+    expect(screen.getByText("Unverified")).toBeInTheDocument();
+    expect(screen.getByText("Official + Community")).toBeInTheDocument();
     expect(screen.getByText("Suggested customer reply")).toBeInTheDocument();
+    expect(screen.getByText("AI answer")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "How this answer was generated" }));
+    expect(screen.getByText(/drafted with Google Gemini/i)).toBeInTheDocument();
+  });
+
+  it("sends ai mode when the AI toggle is selected", async () => {
+    vi.mocked(fetchAnswer).mockResolvedValueOnce({
+      answer: "AI answer",
+      confidenceLabel: "High",
+      suggestedReply: "AI suggested reply",
+      generation: {
+        mode: "AI",
+        label: "AI answer",
+        description: "This answer was drafted with Google Gemini using the gemini-2.5-flash model after searching Zoho's official knowledge base.",
+      },
+      sources: [
+        {
+          id: "kb-101",
+          title: "Reset MFA article",
+          snippet: "Reset steps",
+          url: "https://help.zoho.com/portal/en/kb/accounts/security/mfa-reset",
+          sourceType: "OfficialKB",
+          trustLabel: "Verified",
+        },
+      ],
+    });
+
+    render(<HomePage />);
+    fireEvent.click(screen.getByRole("button", { name: "AI" }));
+    fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
+
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai"));
   });
 
   it("shows similar tickets validation error when query is empty", async () => {

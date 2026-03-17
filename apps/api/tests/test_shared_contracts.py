@@ -13,6 +13,11 @@ def test_answer_response_contract_validates_confidence_label() -> None:
             answer="Use reset flow",
             confidenceLabel="Certain",
             suggestedReply="Please try this.",
+            generation={
+                "mode": "AI",
+                "label": "AI answer",
+                "description": "Generated with Google Gemini using gemini-2.5-flash.",
+            },
             sources=[],
         )
 
@@ -23,6 +28,11 @@ def test_answer_response_contract_requires_source_trust_metadata() -> None:
             answer="Use reset flow",
             confidenceLabel="High",
             suggestedReply="Please try this.",
+            generation={
+                "mode": "Search",
+                "label": "Search answer",
+                "description": "Built from Zoho search results only.",
+            },
             sources=[
                 {
                     "id": "kb-1",
@@ -31,6 +41,16 @@ def test_answer_response_contract_requires_source_trust_metadata() -> None:
                     "url": "https://help.zoho.com/kb/mfa",
                 }
             ],
+        )
+
+
+def test_answer_response_contract_requires_generation_metadata() -> None:
+    with pytest.raises(ValidationError):
+        AnswerResponseContract(
+            answer="Use reset flow",
+            confidenceLabel="High",
+            suggestedReply="Please try this.",
+            sources=[],
         )
 
 

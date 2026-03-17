@@ -8,15 +8,17 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
+import { AnswerRequestMode, AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("ask");
 
   const [askQuery, setAskQuery] = useState("How do I reset MFA for a locked user?");
+  const [askMode, setAskMode] = useState<AnswerRequestMode>("search");
   const [askData, setAskData] = useState<AnswerResponse | null>(null);
   const [askLoading, setAskLoading] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
+  const [showAskGenerationInfo, setShowAskGenerationInfo] = useState(false);
 
   const [ticketQuery, setTicketQuery] = useState("MFA reset issue");
   const [ticketData, setTicketData] = useState<SimilarTicketsResponse | null>(null);
@@ -42,6 +44,45 @@ export default function HomePage() {
     return [];
   }, [activeTab, askData?.sources, ticketData?.tickets]);
 
+  const askHasCommunitySources = (askData?.sources ?? []).some((source) => source.sourceType === "CommunityPost");
+
+  const sourceRailBadge = activeTab === "similar"
+    ? { label: "Historical", variant: "historical" as const }
+    : askHasCommunitySources
+      ? { label: "Official + Community", variant: "community" as const }
+      : { label: "Official", variant: "official" as const };
+
+  const sourceRailStyles: Record<
+    AnswerResponse["sources"][number]["sourceType"],
+    { article: string; badge: "official" | "community" | "historical"; label: string; link: string }
+  > = {
+    OfficialKB: {
+      article: "border border-emerald-200 bg-emerald-50/40",
+      badge: "official",
+      label: "Official KB",
+      link: "text-emerald-700",
+    },
+    CommunityPost: {
+      article: "border border-amber-200 bg-amber-50/40",
+      badge: "community",
+      label: "Community",
+      link: "text-amber-700",
+    },
+    HistoricalTicket: {
+      article: "border border-indigo-200 bg-indigo-50/40",
+      badge: "historical",
+      label: "Historical Ticket",
+      link: "text-indigo-700",
+    },
+  };
+
+  const handleAskModeChange = (mode: AnswerRequestMode) => {
+    setAskMode(mode);
+    setAskData(null);
+    setAskError(null);
+    setShowAskGenerationInfo(false);
+  };
+
   const handleAsk = async () => {
     const normalizedQuestion = askQuery.trim();
 
@@ -53,9 +94,10 @@ export default function HomePage() {
 
     setAskLoading(true);
     setAskError(null);
+    setShowAskGenerationInfo(false);
 
     try {
-      const result = await fetchAnswer(normalizedQuestion);
+      const result = await fetchAnswer(normalizedQuestion, askMode);
       setAskData(result);
     } catch (err) {
       setAskData(null);
@@ -106,12 +148,48 @@ export default function HomePage() {
             <Card>
               <div className="flex items-center justify-between">
                 <CardTitle>Answer Assistant</CardTitle>
-                <Badge variant="official">Official Sources Only</Badge>
+                <Badge variant={askHasCommunitySources ? "community" : "official"}>
+                  {askHasCommunitySources ? "Official KB + Community" : "Official KB"}
+                </Badge>
               </div>
 
               <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="ask-question">
                 Customer question
               </label>
+              <div className="mt-4">
+                <p className="text-sm font-medium text-slate-700">Answer mode</p>
+                <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      askMode === "search"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    aria-pressed={askMode === "search"}
+                    onClick={() => handleAskModeChange("search")}
+                  >
+                    Search only
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      askMode === "ai"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    aria-pressed={askMode === "ai"}
+                    onClick={() => handleAskModeChange("ai")}
+                  >
+                    AI
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {askMode === "search"
+                    ? "Search only avoids AI usage and saves API tokens."
+                    : "AI rewrites the answer after Zoho sources are retrieved."}
+                </p>
+              </div>
               <textarea
                 id="ask-question"
                 className="mt-2 w-full rounded-md border border-slate-300 p-3"
@@ -145,7 +223,32 @@ export default function HomePage() {
               {askData && (
                 <div className="mt-4 space-y-3">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <p className="font-medium">Concise answer</p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">Concise answer</p>
+                        <Badge variant={askData.generation.mode === "AI" ? "official" : "neutral"}>
+                          {askData.generation.label}
+                        </Badge>
+                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-2 self-start rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                        aria-label="How this answer was generated"
+                        aria-expanded={showAskGenerationInfo}
+                        title={askData.generation.description}
+                        onClick={() => setShowAskGenerationInfo((open) => !open)}
+                      >
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] leading-none">
+                          i
+                        </span>
+                        <span>How this answer was generated</span>
+                      </button>
+                    </div>
+                    {showAskGenerationInfo && (
+                      <p className="mt-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
+                        {askData.generation.description}
+                      </p>
+                    )}
                     <p className="mt-1 text-sm">{askData.answer}</p>
                     <p className="mt-2 text-sm text-slate-600">
                       Confidence: <span className="font-medium">{askData.confidenceLabel}</span>
@@ -256,34 +359,35 @@ export default function HomePage() {
         <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source Rail</p>
-            <Badge variant={activeTab === "similar" ? "historical" : "official"}>
-              {activeTab === "similar" ? "Historical" : "Official"}
-            </Badge>
+            <Badge variant={sourceRailBadge.variant}>{sourceRailBadge.label}</Badge>
           </div>
 
           <div className="mt-3 space-y-3">
             {sourceRailContent.length > 0 ? (
-              sourceRailContent.map((source) => (
-                <article
-                  key={source.id}
-                  className={`rounded-md p-3 ${
-                    source.sourceType === "OfficialKB" ? "border border-emerald-200 bg-emerald-50/40" : "border border-indigo-200 bg-indigo-50/40"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-slate-900">{source.title}</p>
-                    <Badge variant={source.sourceType === "OfficialKB" ? "official" : "historical"}>{source.trustLabel}</Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-600">{source.snippet}</p>
-                  {source.sourceType === "OfficialKB" ? (
-                    <a className="mt-2 inline-block text-xs text-emerald-700 underline" href={source.url} target="_blank" rel="noreferrer noopener">
-                      {source.url}
-                    </a>
-                  ) : (
-                    <p className="mt-2 text-xs text-indigo-700">Historical ticket source: {source.id}</p>
-                  )}
-                </article>
-              ))
+              sourceRailContent.map((source) => {
+                const styles = sourceRailStyles[source.sourceType];
+
+                return (
+                  <article
+                    key={source.id}
+                    className={`rounded-md p-3 ${styles.article}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-slate-900">{source.title}</p>
+                      <Badge variant={styles.badge}>{source.trustLabel}</Badge>
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{styles.label}</p>
+                    <p className="mt-1 text-xs text-slate-600">{source.snippet}</p>
+                    {source.sourceType !== "HistoricalTicket" ? (
+                      <a className={`mt-2 inline-block text-xs underline ${styles.link}`} href={source.url} target="_blank" rel="noreferrer noopener">
+                        {source.url}
+                      </a>
+                    ) : (
+                      <p className="mt-2 text-xs text-indigo-700">Historical ticket source: {source.id}</p>
+                    )}
+                  </article>
+                );
+              })
             ) : (
               <p className="text-sm text-slate-500">Sources and ticket references will appear here after running a workflow.</p>
             )}

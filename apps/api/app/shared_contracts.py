@@ -8,17 +8,31 @@ if str(repo_root) not in sys.path:
     sys.path.append(str(repo_root))
 
 from packages.shared.python.zoho_shared_contracts import (  # type: ignore[import-not-found]
+    AnswerGenerationContract,
+    AnswerGenerationMode,
     AnswerRequestContract,
+    AnswerRequestMode,
     AnswerResponseContract,
+    ConfidenceLabel,
     SimilarTicketsRequestContract,
     SimilarTicketsResponseContract,
+    SourceResultContract,
+    SourceType,
     TicketSimilarityResultContract,
+    TrustLabel,
 )
 
 __all__ = [
+    "AnswerGenerationContract",
+    "AnswerGenerationMode",
     "AnswerRequestContract",
+    "AnswerRequestMode",
     "AnswerResponseContract",
+    "ConfidenceLabel",
     "SimilarTicketsRequestContract",
     "SimilarTicketsResponseContract",
+    "SourceResultContract",
+    "SourceType",
     "TicketSimilarityResultContract",
+    "TrustLabel",
 ]
