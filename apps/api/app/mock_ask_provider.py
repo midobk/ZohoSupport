@@ -5,6 +5,7 @@ from .mock_data import ZOHO_SOURCES
 from .shared_contracts import (
     AnswerGenerationContract,
     AnswerGenerationMode,
+    AnswerKeyProfile,
     AnswerRequestMode,
     AnswerResponseContract,
     ConfidenceLabel,
@@ -19,6 +20,7 @@ class MockAskProvider(AskProvider):
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
         model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> AnswerResponseContract:
         normalized_question = question.lower()
 

@@ -30,7 +30,7 @@ describe("API contract validation", () => {
       }),
     } as Response);
 
-    await expect(fetchAnswer("How do I reset MFA?", "ai", "gemini-2.5-flash-lite")).resolves.toMatchObject({
+    await expect(fetchAnswer("How do I reset MFA?", "ai", "gemini-2.5-flash-lite", "unpaid")).resolves.toMatchObject({
       confidenceLabel: "High",
     });
 
@@ -38,7 +38,12 @@ describe("API contract validation", () => {
       "/backend/api/answer",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ question: "How do I reset MFA?", mode: "ai", model: "gemini-2.5-flash-lite" }),
+        body: JSON.stringify({
+          question: "How do I reset MFA?",
+          mode: "ai",
+          model: "gemini-2.5-flash-lite",
+          keyProfile: "unpaid",
+        }),
       }),
     );
   });
@@ -68,7 +73,7 @@ describe("API contract validation", () => {
       }),
     } as Response);
 
-    await expect(fetchAnswer("How do I reset MFA?", "search", "gemini-2.5-flash-lite")).resolves.toMatchObject({
+    await expect(fetchAnswer("How do I reset MFA?", "search", "gemini-2.5-flash-lite", "paid")).resolves.toMatchObject({
       generation: { mode: "Search" },
     });
 

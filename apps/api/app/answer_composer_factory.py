@@ -9,10 +9,10 @@ from .openai_answer_composer import OpenAiAnswerComposer
 
 
 class DisabledAnswerComposer:
-    def is_enabled(self) -> bool:
+    def is_enabled(self, *, key_profile=None) -> bool:
         return False
 
-    def describe(self) -> ComposerDescriptor:
+    def describe(self, *, model=None, key_profile=None) -> ComposerDescriptor:
         raise RuntimeError("Answer composer is disabled")
 
     def compose_answer(self, **_: object) -> None:
@@ -33,7 +33,10 @@ def resolve_answer_composer() -> AnswerComposer:
         return GeminiAnswerComposer()
 
     if provider == "auto":
-        if os.getenv("GEMINI_API_KEY"):
+        if any(
+            os.getenv(variable)
+            for variable in ("GEMINI_API_KEY", "GEMINI_API_KEY_UNPAID", "GEMINI_API_KEY_PAID")
+        ):
             return GeminiAnswerComposer()
         if os.getenv("OPENAI_API_KEY"):
             return OpenAiAnswerComposer()

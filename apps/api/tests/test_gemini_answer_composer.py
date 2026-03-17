@@ -3,6 +3,7 @@ import pytest
 
 from app.gemini_answer_composer import GeminiAnswerComposer
 from app.ask_provider import AskProviderConfigurationError
+from app.shared_contracts import AnswerKeyProfile
 
 
 def test_gemini_answer_composer_parses_structured_json_response() -> None:
@@ -147,6 +148,50 @@ def test_gemini_answer_composer_uses_requested_model_override() -> None:
         official_sources=[],
         community_sources=[],
         model="gemini-2.5-flash-lite",
+    )
+
+    assert result.confidenceLabel == "High"
+
+
+def test_gemini_answer_composer_uses_paid_key_profile(monkeypatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["key"] == "paid-key"
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": (
+                                        '{"answer":"Use the paid-key response.",'
+                                        '"suggestedReply":"Paid profile reply.",'
+                                        '"confidenceLabel":"High"}'
+                                    )
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+        )
+
+    monkeypatch.setenv("GEMINI_API_KEY", "default-key")
+    monkeypatch.setenv("GEMINI_API_KEY_PAID", "paid-key")
+
+    composer = GeminiAnswerComposer(
+        client=httpx.Client(transport=httpx.MockTransport(handler), timeout=5.0),
+        model="gemini-2.5-flash",
+        base_url="https://generativelanguage.googleapis.com/v1beta",
+        enabled=True,
+    )
+
+    result = composer.compose_answer(
+        question="How do I reset MFA for a locked user?",
+        official_sources=[],
+        community_sources=[],
+        key_profile=AnswerKeyProfile.PAID,
     )
 
     assert result.confidenceLabel == "High"

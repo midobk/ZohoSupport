@@ -10,6 +10,7 @@ if str(repo_root) not in sys.path:
 from packages.shared.python.zoho_shared_contracts import (  # type: ignore[import-not-found]
     AnswerGenerationContract,
     AnswerGenerationMode,
+    AnswerKeyProfile,
     AnswerRequestContract,
     AnswerRequestMode,
     AnswerResponseContract,
@@ -25,6 +26,7 @@ from packages.shared.python.zoho_shared_contracts import (  # type: ignore[impor
 __all__ = [
     "AnswerGenerationContract",
     "AnswerGenerationMode",
+    "AnswerKeyProfile",
     "AnswerRequestContract",
     "AnswerRequestMode",
     "AnswerResponseContract",

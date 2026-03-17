@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 
 from app.openai_answer_composer import OpenAiAnswerComposer
-from app.shared_contracts import AnswerRequestMode
+from app.shared_contracts import AnswerKeyProfile, AnswerRequestMode
 from app.zoho_public_ask_provider import ZohoPublicAskProvider
 
 
@@ -208,16 +208,18 @@ def test_live_ask_provider_returns_low_confidence_when_only_community_matches() 
 
 def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
     class StubComposer:
-        def is_enabled(self) -> bool:
+        def is_enabled(self, *, key_profile: AnswerKeyProfile | None = None) -> bool:
+            assert key_profile == AnswerKeyProfile.PAID
             return True
 
-        def describe(self, *, model: str | None = None):
+        def describe(self, *, model: str | None = None, key_profile: AnswerKeyProfile | None = None):
             return type(
                 "ComposerDescriptor",
                 (),
                 {
                     "providerLabel": "Google Gemini",
                     "modelLabel": model or "gemini-2.5-flash",
+                    "keyProfileLabel": key_profile.value if key_profile else None,
                 },
             )()
 
@@ -228,11 +230,13 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
             official_sources: list[dict[str, str]],
             community_sources: list[dict[str, str]],
             model: str | None = None,
+            key_profile: AnswerKeyProfile | None = None,
         ):
             assert "locked user" in question
             assert official_sources[0]["source_type"] == "official_kb"
             assert community_sources[0]["source_type"] == "community_post"
             assert model == "gemini-2.5-flash-lite"
+            assert key_profile == AnswerKeyProfile.PAID
             return type(
                 "ComposedAnswer",
                 (),
@@ -250,6 +254,7 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
         "How do I reset MFA for a locked user?",
         mode=AnswerRequestMode.AI,
         model="gemini-2.5-flash-lite",
+        key_profile=AnswerKeyProfile.PAID,
     )
 
     assert result.answer == "AI-composed answer grounded in official Zoho sources."
@@ -257,21 +262,23 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
     assert result.generation.mode == "AI"
     assert "google gemini" in result.generation.description.lower()
     assert "gemini-2.5-flash-lite" in result.generation.description
+    assert "paid api key profile" in result.generation.description.lower()
     assert "normal search" in result.generation.description.lower()
 
 
 def test_live_ask_provider_skips_ai_when_search_mode_is_selected() -> None:
     class StubComposer:
-        def is_enabled(self) -> bool:
+        def is_enabled(self, *, key_profile: AnswerKeyProfile | None = None) -> bool:
             return True
 
-        def describe(self, *, model: str | None = None):
+        def describe(self, *, model: str | None = None, key_profile: AnswerKeyProfile | None = None):
             return type(
                 "ComposerDescriptor",
                 (),
                 {
                     "providerLabel": "Google Gemini",
                     "modelLabel": model or "gemini-2.5-flash",
+                    "keyProfileLabel": key_profile.value if key_profile else None,
                 },
             )()
 

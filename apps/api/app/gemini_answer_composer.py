@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from .answer_composer import AnswerComposer, ComposerDescriptor, ComposedAnswer
 from .ask_provider import AskProviderConfigurationError, AskProviderUnavailableError
+from .shared_contracts import AnswerKeyProfile
 
 DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
@@ -31,17 +32,26 @@ class GeminiAnswerComposer(AnswerComposer):
         base_url: str | None = None,
         enabled: bool | None = None,
     ) -> None:
-        self._api_key = api_key if api_key is not None else os.getenv("GEMINI_API_KEY")
+        self._default_api_key = api_key if api_key is not None else os.getenv("GEMINI_API_KEY")
         self._model = model or os.getenv("GEMINI_MODEL_ANSWER", DEFAULT_GEMINI_MODEL)
         self._base_url = (base_url or os.getenv("GEMINI_BASE_URL", DEFAULT_GEMINI_BASE_URL)).rstrip("/")
         self._enabled = enabled if enabled is not None else self._parse_bool(os.getenv("ASK_ENABLE_AI"), True)
         self._client = client or httpx.Client(timeout=20.0)
 
-    def is_enabled(self) -> bool:
-        return self._enabled and bool(self._api_key)
+    def is_enabled(self, *, key_profile: AnswerKeyProfile | None = None) -> bool:
+        return self._enabled and bool(self._resolve_api_key(key_profile))
 
-    def describe(self, *, model: str | None = None) -> ComposerDescriptor:
-        return ComposerDescriptor(providerLabel="Google Gemini", modelLabel=self._resolve_model(model))
+    def describe(
+        self,
+        *,
+        model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
+    ) -> ComposerDescriptor:
+        return ComposerDescriptor(
+            providerLabel="Google Gemini",
+            modelLabel=self._resolve_model(model),
+            keyProfileLabel=self._resolve_key_profile_label(key_profile),
+        )
 
     def compose_answer(
         self,
@@ -50,11 +60,13 @@ class GeminiAnswerComposer(AnswerComposer):
         official_sources: Iterable[dict[str, str]],
         community_sources: Iterable[dict[str, str]],
         model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> ComposedAnswer:
-        if not self.is_enabled():
+        if not self.is_enabled(key_profile=key_profile):
             raise AskProviderConfigurationError("Gemini answer composition is not enabled")
 
         resolved_model = self._resolve_model(model)
+        api_key = self._resolve_api_key(key_profile)
 
         system_prompt = (
             "You are a support copilot for Zoho products. "
@@ -108,7 +120,7 @@ class GeminiAnswerComposer(AnswerComposer):
         try:
             response = self._client.post(
                 f"{self._base_url}/models/{resolved_model}:generateContent",
-                params={"key": self._api_key},
+                params={"key": api_key},
                 headers={"Content-Type": "application/json"},
                 json=request_body,
             )
@@ -210,3 +222,20 @@ class GeminiAnswerComposer(AnswerComposer):
                 "supportedModels": sorted(SUPPORTED_GEMINI_MODELS),
             },
         )
+
+    def _resolve_api_key(self, key_profile: AnswerKeyProfile | None) -> str | None:
+        if key_profile == AnswerKeyProfile.PAID:
+            return os.getenv("GEMINI_API_KEY_PAID")
+
+        if key_profile == AnswerKeyProfile.UNPAID:
+            return os.getenv("GEMINI_API_KEY_UNPAID") or self._default_api_key
+
+        return self._default_api_key or os.getenv("GEMINI_API_KEY_UNPAID") or os.getenv("GEMINI_API_KEY_PAID")
+
+    @staticmethod
+    def _resolve_key_profile_label(key_profile: AnswerKeyProfile | None) -> str | None:
+        if key_profile == AnswerKeyProfile.PAID:
+            return "paid"
+        if key_profile == AnswerKeyProfile.UNPAID:
+            return "unpaid"
+        return None

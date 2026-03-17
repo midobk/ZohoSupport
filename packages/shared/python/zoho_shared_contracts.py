@@ -17,10 +17,16 @@ class AnswerRequestMode(str, Enum):
     SEARCH = "search"
 
 
+class AnswerKeyProfile(str, Enum):
+    UNPAID = "unpaid"
+    PAID = "paid"
+
+
 class AnswerRequestContract(BaseModel):
     question: str = Field(..., min_length=3)
     mode: AnswerRequestMode = AnswerRequestMode.SEARCH
     model: Optional[str] = None
+    keyProfile: Optional[AnswerKeyProfile] = None
 
 
 class AnswerGenerationMode(str, Enum):

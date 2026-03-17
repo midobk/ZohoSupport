@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from .shared_contracts import AnswerRequestMode, AnswerResponseContract
+from .shared_contracts import AnswerKeyProfile, AnswerRequestMode, AnswerResponseContract
 
 
 class AskProvider(Protocol):
@@ -12,6 +12,7 @@ class AskProvider(Protocol):
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
         model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> AnswerResponseContract:
         """Return a grounded answer and supporting sources for the Ask flow."""
 

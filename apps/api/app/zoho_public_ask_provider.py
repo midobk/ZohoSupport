@@ -15,6 +15,7 @@ from .ask_provider import AskProvider, AskProviderConfigurationError, AskProvide
 from .shared_contracts import (
     AnswerGenerationContract,
     AnswerGenerationMode,
+    AnswerKeyProfile,
     AnswerRequestMode,
     AnswerResponseContract,
     ConfidenceLabel,
@@ -126,6 +127,7 @@ class ZohoPublicAskProvider(AskProvider):
         *,
         mode: AnswerRequestMode = AnswerRequestMode.SEARCH,
         model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> AnswerResponseContract:
         official_sources = self._search_kb_articles(question)
         community_sources = self._search_community_topics(question) if self._include_community else []
@@ -149,6 +151,7 @@ class ZohoPublicAskProvider(AskProvider):
                     requested_mode=mode,
                     community_used=bool(community_sources),
                     official_match_found=False,
+                    key_profile=key_profile,
                 ),
                 sources=sources,
             )
@@ -157,19 +160,24 @@ class ZohoPublicAskProvider(AskProvider):
         sources = [self._to_official_source(result) for result in official_sources]
         sources.extend(self._to_community_source(result) for result in community_sources)
 
-        if mode == AnswerRequestMode.AI and self._get_answer_composer().is_enabled():
+        if mode == AnswerRequestMode.AI and self._get_answer_composer().is_enabled(key_profile=key_profile):
             try:
                 composed_answer = self._get_answer_composer().compose_answer(
                     question=question,
                     official_sources=[self._source_payload(result) for result in official_sources],
                     community_sources=[self._community_payload(result) for result in community_sources],
                     model=model,
+                    key_profile=key_profile,
                 )
                 return AnswerResponseContract(
                     answer=composed_answer.answer,
                     confidenceLabel=composed_answer.confidenceLabel,
                     suggestedReply=composed_answer.suggestedReply,
-                    generation=self._build_ai_generation(community_used=bool(community_sources), model=model),
+                    generation=self._build_ai_generation(
+                        community_used=bool(community_sources),
+                        model=model,
+                        key_profile=key_profile,
+                    ),
                     sources=sources,
                 )
             except AskProviderUnavailableError:
@@ -182,6 +190,7 @@ class ZohoPublicAskProvider(AskProvider):
                         requested_mode=mode,
                         community_used=bool(community_sources),
                         ai_fallback=True,
+                        key_profile=key_profile,
                     ),
                     sources=sources,
                 )
@@ -193,17 +202,26 @@ class ZohoPublicAskProvider(AskProvider):
             generation=self._build_search_generation(
                 requested_mode=mode,
                 community_used=bool(community_sources),
-                ai_fallback=mode == AnswerRequestMode.AI and not self._get_answer_composer().is_enabled(),
+                ai_fallback=mode == AnswerRequestMode.AI and not self._get_answer_composer().is_enabled(key_profile=key_profile),
+                key_profile=key_profile,
             ),
             sources=sources,
         )
 
-    def _build_ai_generation(self, *, community_used: bool, model: str | None = None) -> AnswerGenerationContract:
-        descriptor = self._get_answer_composer().describe(model=model)
+    def _build_ai_generation(
+        self,
+        *,
+        community_used: bool,
+        model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
+    ) -> AnswerGenerationContract:
+        descriptor = self._get_answer_composer().describe(model=model, key_profile=key_profile)
         description = (
             "The results were retrieved from Zoho's normal search first. "
             f"Then {descriptor.providerLabel} using the {descriptor.modelLabel} model drafted the answer text."
         )
+        if descriptor.keyProfileLabel:
+            description += f" It used the {descriptor.keyProfileLabel} API key profile."
         if community_used:
             description += " Community posts were used only as extra context and were not treated as official policy."
 
@@ -220,9 +238,13 @@ class ZohoPublicAskProvider(AskProvider):
         community_used: bool,
         official_match_found: bool = True,
         ai_fallback: bool = False,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> AnswerGenerationContract:
         if ai_fallback:
-            description = "AI was requested, but it was unavailable for this run, so both the results and the answer fell back to normal Zoho search only."
+            description = "AI was requested"
+            if key_profile is not None:
+                description += f" with the {key_profile.value} API key profile"
+            description += ", but it was unavailable for this run, so both the results and the answer fell back to normal Zoho search only."
         elif requested_mode == AnswerRequestMode.SEARCH:
             description = "Normal search was selected, so both the results and the answer were built from Zoho search without using AI."
         else:

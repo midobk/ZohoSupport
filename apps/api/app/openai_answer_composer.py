@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from .answer_composer import AnswerComposer, ComposerDescriptor, ComposedAnswer
 from .ask_provider import AskProviderConfigurationError, AskProviderUnavailableError
+from .shared_contracts import AnswerKeyProfile
 
 DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
@@ -30,10 +31,15 @@ class OpenAiAnswerComposer(AnswerComposer):
         self._enabled = enabled if enabled is not None else self._parse_bool(os.getenv("ASK_ENABLE_AI"), True)
         self._client = client or httpx.Client(timeout=20.0)
 
-    def is_enabled(self) -> bool:
+    def is_enabled(self, *, key_profile: AnswerKeyProfile | None = None) -> bool:
         return self._enabled and bool(self._api_key)
 
-    def describe(self, *, model: str | None = None) -> ComposerDescriptor:
+    def describe(
+        self,
+        *,
+        model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
+    ) -> ComposerDescriptor:
         return ComposerDescriptor(providerLabel="OpenAI", modelLabel=self._model)
 
     def compose_answer(
@@ -43,6 +49,7 @@ class OpenAiAnswerComposer(AnswerComposer):
         official_sources: Iterable[dict[str, str]],
         community_sources: Iterable[dict[str, str]],
         model: str | None = None,
+        key_profile: AnswerKeyProfile | None = None,
     ) -> ComposedAnswer:
         if not self.is_enabled():
             raise AskProviderConfigurationError("OpenAI answer composition is not enabled")

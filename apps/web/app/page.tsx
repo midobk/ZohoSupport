@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { AnswerRequestMode, AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
+import { AnswerKeyProfile, AnswerRequestMode, AnswerResponse, SimilarTicketsResponse } from "@zoho/shared";
 
 const GEMINI_MODEL_OPTIONS = [
   {
@@ -37,12 +37,26 @@ const GEMINI_MODEL_OPTIONS = [
   },
 ] as const;
 
+const GEMINI_KEY_PROFILE_OPTIONS = [
+  {
+    id: "unpaid",
+    label: "Unpaid",
+    note: "Current key. Use this when you want to stay on the non-paid setup.",
+  },
+  {
+    id: "paid",
+    label: "Paid",
+    note: "Billable key. Use this when you want the paid Gemini quota.",
+  },
+] as const;
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>("ask");
 
   const [askQuery, setAskQuery] = useState("How do I reset MFA for a locked user?");
   const [askMode, setAskMode] = useState<AnswerRequestMode>("search");
   const [askModel, setAskModel] = useState<string>("gemini-2.5-flash-lite");
+  const [askKeyProfile, setAskKeyProfile] = useState<AnswerKeyProfile>("unpaid");
   const [askData, setAskData] = useState<AnswerResponse | null>(null);
   const [askLoading, setAskLoading] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
@@ -105,6 +119,7 @@ export default function HomePage() {
   };
 
   const selectedAskModel = GEMINI_MODEL_OPTIONS.find((option) => option.id === askModel) ?? GEMINI_MODEL_OPTIONS[0];
+  const selectedAskKeyProfile = GEMINI_KEY_PROFILE_OPTIONS.find((option) => option.id === askKeyProfile) ?? GEMINI_KEY_PROFILE_OPTIONS[0];
 
   const handleAskModeChange = (mode: AnswerRequestMode) => {
     setAskMode(mode);
@@ -115,6 +130,13 @@ export default function HomePage() {
 
   const handleAskModelChange = (model: string) => {
     setAskModel(model);
+    setAskData(null);
+    setAskError(null);
+    setShowAskGenerationInfo(false);
+  };
+
+  const handleAskKeyProfileChange = (keyProfile: AnswerKeyProfile) => {
+    setAskKeyProfile(keyProfile);
     setAskData(null);
     setAskError(null);
     setShowAskGenerationInfo(false);
@@ -134,7 +156,12 @@ export default function HomePage() {
     setShowAskGenerationInfo(false);
 
     try {
-      const result = await fetchAnswer(normalizedQuestion, askMode, askMode === "ai" ? askModel : undefined);
+      const result = await fetchAnswer(
+        normalizedQuestion,
+        askMode,
+        askMode === "ai" ? askModel : undefined,
+        askMode === "ai" ? askKeyProfile : undefined,
+      );
       setAskData(result);
     } catch (err) {
       setAskData(null);
@@ -245,6 +272,24 @@ export default function HomePage() {
                     </select>
                     <p className="mt-2 text-xs text-slate-500">
                       {selectedAskModel.requestsPerDayLabel}. {selectedAskModel.note}
+                    </p>
+                    <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="ask-key-profile">
+                      Gemini key
+                    </label>
+                    <select
+                      id="ask-key-profile"
+                      className="mt-2 w-full rounded-md border border-slate-300 bg-white p-3 text-sm"
+                      value={askKeyProfile}
+                      onChange={(e) => handleAskKeyProfileChange(e.target.value as AnswerKeyProfile)}
+                    >
+                      {GEMINI_KEY_PROFILE_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {selectedAskKeyProfile.note}
                     </p>
                   </div>
                 )}

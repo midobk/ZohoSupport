@@ -21,6 +21,7 @@ describe("Home page", () => {
     expect(screen.getByRole("button", { name: "Normal search" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "AI-assisted" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByLabelText("Gemini model")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Gemini key")).not.toBeInTheDocument();
   });
 
   it("shows ask validation error when question is empty", async () => {
@@ -65,7 +66,7 @@ describe("Home page", () => {
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "search", undefined));
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "search", undefined, undefined));
     expect(await screen.findByText("Concise answer")).toBeInTheDocument();
     expect(screen.getByText("Confidence:", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Source Rail")).toBeInTheDocument();
@@ -104,9 +105,10 @@ describe("Home page", () => {
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "AI-assisted" }));
     expect(screen.getByLabelText("Gemini model")).toHaveValue("gemini-2.5-flash-lite");
+    expect(screen.getByLabelText("Gemini key")).toHaveValue("unpaid");
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-flash-lite"));
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-flash-lite", "unpaid"));
   });
 
   it("lets the user choose a different Gemini model", async () => {
@@ -134,9 +136,10 @@ describe("Home page", () => {
     render(<HomePage />);
     fireEvent.click(screen.getByRole("button", { name: "AI-assisted" }));
     fireEvent.change(screen.getByLabelText("Gemini model"), { target: { value: "gemini-2.5-pro" } });
+    fireEvent.change(screen.getByLabelText("Gemini key"), { target: { value: "paid" } });
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
-    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-pro"));
+    await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai", "gemini-2.5-pro", "paid"));
   });
 
   it("shows similar tickets validation error when query is empty", async () => {

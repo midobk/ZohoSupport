@@ -1,4 +1,5 @@
 import {
+  AnswerKeyProfile,
   AnswerRequestMode,
   AnswerResponse,
   SimilarTicketsResponse,
@@ -36,10 +37,11 @@ export async function fetchAnswer(
   question: string,
   mode: AnswerRequestMode = "search",
   model?: string,
+  keyProfile?: AnswerKeyProfile,
 ): Promise<AnswerResponse> {
   const payload = answerRequestSchema.parse(
     mode === "ai"
-      ? { question, mode, model }
+      ? { question, mode, model, keyProfile }
       : { question, mode },
   );
 

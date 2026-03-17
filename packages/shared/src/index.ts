@@ -2,6 +2,7 @@ export type ConfidenceLabel = "High" | "Medium" | "Low";
 export type DraftReply = string;
 export type AnswerGenerationMode = "AI" | "Search";
 export type AnswerRequestMode = "ai" | "search";
+export type AnswerKeyProfile = "unpaid" | "paid";
 
 export type AnswerGeneration = {
   mode: AnswerGenerationMode;
@@ -22,6 +23,7 @@ export type AnswerRequest = {
   question: string;
   mode: AnswerRequestMode;
   model?: string;
+  keyProfile?: AnswerKeyProfile;
 };
 
 export type AnswerResponse = {
@@ -77,6 +79,13 @@ const parseAnswerGenerationMode = (value: unknown): AnswerGenerationMode => {
     return value;
   }
   throw new Error("Invalid field: generation.mode");
+};
+
+const parseAnswerKeyProfile = (value: unknown): AnswerKeyProfile => {
+  if (value === "unpaid" || value === "paid") {
+    return value;
+  }
+  throw new Error("Invalid field: keyProfile");
 };
 
 const parseUrl = (value: unknown, fieldName: string): string => {
@@ -148,6 +157,9 @@ export const answerRequestSchema: Parser<AnswerRequest> = {
       mode,
       model: mode === "ai" && "model" in raw && raw.model !== undefined && raw.model !== null
         ? parseString(raw.model, "model")
+        : undefined,
+      keyProfile: mode === "ai" && "keyProfile" in raw && raw.keyProfile !== undefined && raw.keyProfile !== null
+        ? parseAnswerKeyProfile(raw.keyProfile)
         : undefined,
     };
   },
