@@ -43,6 +43,44 @@ describe("API contract validation", () => {
     );
   });
 
+  it("omits model from search-only answer requests", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        answer: "Use Zoho search results only",
+        confidenceLabel: "Medium",
+        suggestedReply: "Here is the official guidance I found.",
+        generation: {
+          mode: "Search",
+          label: "Search answer",
+          description: "Normal search was selected, so both the results and the answer were built from Zoho search without using AI.",
+        },
+        sources: [
+          {
+            id: "kb-201",
+            title: "Search-only article",
+            snippet: "Official search result",
+            url: "https://help.zoho.com/portal/en/kb/desk/example",
+            sourceType: "OfficialKB",
+            trustLabel: "Verified",
+          },
+        ],
+      }),
+    } as Response);
+
+    await expect(fetchAnswer("How do I reset MFA?", "search", "gemini-2.5-flash-lite")).resolves.toMatchObject({
+      generation: { mode: "Search" },
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/backend/api/answer",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ question: "How do I reset MFA?", mode: "search" }),
+      }),
+    );
+  });
+
   it("rejects invalid answer response", async () => {
     vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: true,

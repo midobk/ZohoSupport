@@ -17,6 +17,7 @@ SUPPORTED_GEMINI_MODELS = {
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
 }
 
 

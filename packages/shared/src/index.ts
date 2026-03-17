@@ -138,13 +138,16 @@ export const answerRequestSchema: Parser<AnswerRequest> = {
       throw new Error("Invalid answer request");
     }
 
+    const raw = value as Record<string, unknown>;
+    const mode = "mode" in raw && raw.mode !== undefined
+      ? parseAnswerRequestMode(raw.mode)
+      : "search";
+
     return {
-      question: parseString((value as Record<string, unknown>).question, "question", 3),
-      mode: value && typeof value === "object" && "mode" in (value as Record<string, unknown>)
-        ? parseAnswerRequestMode((value as Record<string, unknown>).mode)
-        : "search",
-      model: value && typeof value === "object" && "model" in (value as Record<string, unknown>)
-        ? parseString((value as Record<string, unknown>).model, "model")
+      question: parseString(raw.question, "question", 3),
+      mode,
+      model: mode === "ai" && "model" in raw && raw.model !== undefined && raw.model !== null
+        ? parseString(raw.model, "model")
         : undefined,
     };
   },

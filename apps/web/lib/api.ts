@@ -37,7 +37,11 @@ export async function fetchAnswer(
   mode: AnswerRequestMode = "search",
   model?: string,
 ): Promise<AnswerResponse> {
-  const payload = answerRequestSchema.parse({ question, mode, model });
+  const payload = answerRequestSchema.parse(
+    mode === "ai"
+      ? { question, mode, model }
+      : { question, mode },
+  );
 
   const res = await fetch(`${API_BASE_URL}/api/answer`, {
     method: "POST",

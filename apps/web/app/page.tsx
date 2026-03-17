@@ -30,8 +30,8 @@ const GEMINI_MODEL_OPTIONS = [
     note: "Best reasoning, lowest published daily cap in this list.",
   },
   {
-    id: "gemini-3-flash-preview",
-    label: "Gemini 3 Flash Preview",
+    id: "gemini-3.1-flash-lite-preview",
+    label: "Gemini 3.1 Flash-Lite Preview",
     requestsPerDayLabel: "RPD not published",
     note: "Preview model. Google does not currently publish a standard free-tier daily limit for it in the main quota table.",
   },
