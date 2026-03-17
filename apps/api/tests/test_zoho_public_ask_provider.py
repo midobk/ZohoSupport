@@ -285,3 +285,22 @@ def test_live_ask_provider_skips_ai_when_search_mode_is_selected() -> None:
 
     assert result.generation.mode == "Search"
     assert "normal search was selected" in result.generation.description.lower()
+
+
+def test_live_ask_provider_does_not_resolve_ai_composer_for_search_mode(monkeypatch) -> None:
+    provider = ZohoPublicAskProvider(
+        client=build_provider()._client,  # type: ignore[attr-defined]
+        help_center_root="https://help.zoho.com/portal/en",
+        allowed_products=("desk", "mail"),
+        include_community=True,
+        answer_composer=None,
+    )
+
+    def fail_if_called():
+        raise AssertionError("resolve_answer_composer should not be called in search mode")
+
+    monkeypatch.setattr("app.zoho_public_ask_provider.resolve_answer_composer", fail_if_called)
+
+    result = provider.answer_question("How do I reset MFA for a locked user?", mode=AnswerRequestMode.SEARCH)
+
+    assert result.generation.mode == "Search"

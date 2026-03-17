@@ -118,7 +118,7 @@ class ZohoPublicAskProvider(AskProvider):
         self._portal_id: str | None = None
         self._selected_kb_root_ids: set[str] | None = None
         self._selected_community_category_ids: set[str] | None = None
-        self._answer_composer = answer_composer or resolve_answer_composer()
+        self._answer_composer = answer_composer
 
     def answer_question(
         self,
@@ -157,9 +157,9 @@ class ZohoPublicAskProvider(AskProvider):
         sources = [self._to_official_source(result) for result in official_sources]
         sources.extend(self._to_community_source(result) for result in community_sources)
 
-        if mode == AnswerRequestMode.AI and self._answer_composer.is_enabled():
+        if mode == AnswerRequestMode.AI and self._get_answer_composer().is_enabled():
             try:
-                composed_answer = self._answer_composer.compose_answer(
+                composed_answer = self._get_answer_composer().compose_answer(
                     question=question,
                     official_sources=[self._source_payload(result) for result in official_sources],
                     community_sources=[self._community_payload(result) for result in community_sources],
@@ -193,13 +193,13 @@ class ZohoPublicAskProvider(AskProvider):
             generation=self._build_search_generation(
                 requested_mode=mode,
                 community_used=bool(community_sources),
-                ai_fallback=mode == AnswerRequestMode.AI and not self._answer_composer.is_enabled(),
+                ai_fallback=mode == AnswerRequestMode.AI and not self._get_answer_composer().is_enabled(),
             ),
             sources=sources,
         )
 
     def _build_ai_generation(self, *, community_used: bool, model: str | None = None) -> AnswerGenerationContract:
-        descriptor = self._answer_composer.describe(model=model)
+        descriptor = self._get_answer_composer().describe(model=model)
         description = (
             "The results were retrieved from Zoho's normal search first. "
             f"Then {descriptor.providerLabel} using the {descriptor.modelLabel} model drafted the answer text."
@@ -239,6 +239,11 @@ class ZohoPublicAskProvider(AskProvider):
             label="Search answer",
             description=description,
         )
+
+    def _get_answer_composer(self) -> AnswerComposer:
+        if self._answer_composer is None:
+            self._answer_composer = resolve_answer_composer()
+        return self._answer_composer
 
     @staticmethod
     def _build_search_answer(
