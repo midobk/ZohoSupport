@@ -169,7 +169,7 @@ export default function HomePage() {
                     aria-pressed={askMode === "search"}
                     onClick={() => handleAskModeChange("search")}
                   >
-                    Search only
+                    Normal search
                   </button>
                   <button
                     type="button"
@@ -181,13 +181,13 @@ export default function HomePage() {
                     aria-pressed={askMode === "ai"}
                     onClick={() => handleAskModeChange("ai")}
                   >
-                    AI
+                    AI-assisted
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
                   {askMode === "search"
-                    ? "Search only avoids AI usage and saves API tokens."
-                    : "AI rewrites the answer after Zoho sources are retrieved."}
+                    ? "Normal search uses Zoho search only. No AI is used for retrieval or wording."
+                    : "AI-assisted uses the same Zoho search results, then an AI model drafts the answer text."}
                 </p>
               </div>
               <textarea
@@ -230,25 +230,7 @@ export default function HomePage() {
                           {askData.generation.label}
                         </Badge>
                       </div>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 self-start rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
-                        aria-label="How this answer was generated"
-                        aria-expanded={showAskGenerationInfo}
-                        title={askData.generation.description}
-                        onClick={() => setShowAskGenerationInfo((open) => !open)}
-                      >
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 text-[11px] leading-none">
-                          i
-                        </span>
-                        <span>How this answer was generated</span>
-                      </button>
                     </div>
-                    {showAskGenerationInfo && (
-                      <p className="mt-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
-                        {askData.generation.description}
-                      </p>
-                    )}
                     <p className="mt-1 text-sm">{askData.answer}</p>
                     <p className="mt-2 text-sm text-slate-600">
                       Confidence: <span className="font-medium">{askData.confidenceLabel}</span>
@@ -358,11 +340,30 @@ export default function HomePage() {
 
         <aside className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source Rail</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Source Rail</p>
+              {activeTab === "ask" && askData && (
+                <button
+                  type="button"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                  aria-label="How these results were built"
+                  aria-expanded={showAskGenerationInfo}
+                  title={askData.generation.description}
+                  onClick={() => setShowAskGenerationInfo((open) => !open)}
+                >
+                  i
+                </button>
+              )}
+            </div>
             <Badge variant={sourceRailBadge.variant}>{sourceRailBadge.label}</Badge>
           </div>
 
           <div className="mt-3 space-y-3">
+            {activeTab === "ask" && askData && showAskGenerationInfo && (
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                {askData.generation.description}
+              </div>
+            )}
             {sourceRailContent.length > 0 ? (
               sourceRailContent.map((source) => {
                 const styles = sourceRailStyles[source.sourceType];

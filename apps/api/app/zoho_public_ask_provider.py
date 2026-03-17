@@ -199,8 +199,8 @@ class ZohoPublicAskProvider(AskProvider):
     def _build_ai_generation(self, *, community_used: bool) -> AnswerGenerationContract:
         descriptor = self._answer_composer.describe()
         description = (
-            f"This answer was drafted with {descriptor.providerLabel} using the {descriptor.modelLabel} model after "
-            "searching Zoho's official knowledge base."
+            "The results were retrieved from Zoho's normal search first. "
+            f"Then {descriptor.providerLabel} using the {descriptor.modelLabel} model drafted the answer text."
         )
         if community_used:
             description += " Community posts were used only as extra context and were not treated as official policy."
@@ -220,11 +220,11 @@ class ZohoPublicAskProvider(AskProvider):
         ai_fallback: bool = False,
     ) -> AnswerGenerationContract:
         if ai_fallback:
-            description = "AI was requested, but it was unavailable for this run, so the answer fell back to Zoho search results only."
+            description = "AI was requested, but it was unavailable for this run, so both the results and the answer fell back to normal Zoho search only."
         elif requested_mode == AnswerRequestMode.SEARCH:
-            description = "Search only was selected, so this answer was built from Zoho search results without using AI."
+            description = "Normal search was selected, so both the results and the answer were built from Zoho search without using AI."
         else:
-            description = "This answer was built from Zoho search results only. No AI model wrote the wording."
+            description = "Both the results and the answer were built from Zoho search only. No AI was used."
 
         if not official_match_found:
             description += " I could not find a strong official KB match, so this result stays search-based."

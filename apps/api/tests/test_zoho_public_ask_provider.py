@@ -131,7 +131,7 @@ def test_live_ask_provider_filters_to_allowed_products_and_marks_community_unver
     assert result.confidenceLabel == "High"
     assert result.generation.mode == "Search"
     assert result.generation.label == "Search answer"
-    assert "search only was selected" in result.generation.description.lower()
+    assert "normal search was selected" in result.generation.description.lower()
     assert result.sources[0].sourceType == "OfficialKB"
     assert result.sources[1].sourceType == "OfficialKB"
     assert result.sources[2].sourceType == "CommunityPost"
@@ -243,6 +243,7 @@ def test_live_ask_provider_uses_ai_composer_when_enabled() -> None:
     assert result.generation.mode == "AI"
     assert "google gemini" in result.generation.description.lower()
     assert "gemini-2.5-flash" in result.generation.description
+    assert "normal search" in result.generation.description.lower()
 
 
 def test_live_ask_provider_skips_ai_when_search_mode_is_selected() -> None:
@@ -269,4 +270,4 @@ def test_live_ask_provider_skips_ai_when_search_mode_is_selected() -> None:
     result = provider.answer_question("How do I reset MFA for a locked user?", mode=AnswerRequestMode.SEARCH)
 
     assert result.generation.mode == "Search"
-    assert "search only was selected" in result.generation.description.lower()
+    assert "normal search was selected" in result.generation.description.lower()

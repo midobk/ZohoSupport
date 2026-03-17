@@ -18,8 +18,8 @@ describe("Home page", () => {
     expect(screen.getByRole("button", { name: /Ask/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Similar Tickets/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Live Assist/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Search only" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "AI" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Normal search" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "AI-assisted" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("shows ask validation error when question is empty", async () => {
@@ -39,7 +39,7 @@ describe("Home page", () => {
       generation: {
         mode: "AI",
         label: "AI answer",
-        description: "This answer was drafted with Google Gemini using the gemini-2.5-flash model after searching Zoho's official knowledge base.",
+        description: "The results were retrieved from Zoho's normal search first. Then Google Gemini using the gemini-2.5-flash model drafted the answer text.",
       },
       sources: [
         {
@@ -74,8 +74,8 @@ describe("Home page", () => {
     expect(screen.getByText("Suggested customer reply")).toBeInTheDocument();
     expect(screen.getByText("AI answer")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "How this answer was generated" }));
-    expect(screen.getByText(/drafted with Google Gemini/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "How these results were built" }));
+    expect(screen.getByText(/Then Google Gemini using the gemini-2.5-flash model drafted the answer text/i)).toBeInTheDocument();
   });
 
   it("sends ai mode when the AI toggle is selected", async () => {
@@ -86,7 +86,7 @@ describe("Home page", () => {
       generation: {
         mode: "AI",
         label: "AI answer",
-        description: "This answer was drafted with Google Gemini using the gemini-2.5-flash model after searching Zoho's official knowledge base.",
+        description: "The results were retrieved from Zoho's normal search first. Then Google Gemini using the gemini-2.5-flash model drafted the answer text.",
       },
       sources: [
         {
@@ -101,7 +101,7 @@ describe("Home page", () => {
     });
 
     render(<HomePage />);
-    fireEvent.click(screen.getByRole("button", { name: "AI" }));
+    fireEvent.click(screen.getByRole("button", { name: "AI-assisted" }));
     fireEvent.click(screen.getByRole("button", { name: "Get answer" }));
 
     await waitFor(() => expect(fetchAnswer).toHaveBeenCalledWith("How do I reset MFA for a locked user?", "ai"));
